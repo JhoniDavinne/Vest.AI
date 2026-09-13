@@ -1,0 +1,24 @@
+Metadata-Version: 2.4
+Name: veste-ai-api
+Version: 0.1.0
+Summary: VESTE.AI - API e motor de recomendacao de tamanho e caimento (MVP)
+Requires-Python: >=3.11
+Requires-Dist: fastapi>=0.115
+Requires-Dist: uvicorn[standard]>=0.30
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: alembic>=1.13
+Requires-Dist: pydantic>=2.7
+Requires-Dist: pydantic-settings>=2.3
+Requires-Dist: psycopg[binary]>=3.1
+Requires-Dist: numpy>=1.26
+Requires-Dist: pandas>=2.2
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: pillow>=10.3
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: pytest-cov>=5; extra == "dev"
+Requires-Dist: httpx>=0.27; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"
+Provides-Extra: vision
+Requires-Dist: opencv-python-headless>=4.9; extra == "vision"
+Requires-Dist: mediapipe>=0.10; extra == "vision"

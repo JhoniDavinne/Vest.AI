@@ -40,7 +40,6 @@ Pré-requisitos: Node.js 20+, Python 3.11+ e, se quiser o banco oficial, Docker 
 ### 1. Front-end
 
 ```bash
-cd veste-ai
 npm install
 npm run dev:web
 ```
@@ -100,7 +99,6 @@ veste_demo_key_loja_parceira
 ## Como executar com Docker
 
 ```bash
-cd veste-ai
 npm run docker:up
 ```
 
@@ -237,7 +235,7 @@ Os arquivos saem em `docs/pdf/`.
 ## Estrutura
 
 ```text
-veste-ai/
+.
 ├── apps/web/          # Next.js
 ├── apps/api/          # FastAPI + motor
 ├── packages/
