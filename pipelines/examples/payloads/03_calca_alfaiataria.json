@@ -1,0 +1,19 @@
+{
+  "name": "Calça alfaiataria — perfil demo",
+  "expect": {
+    "recommended_size": "42"
+  },
+  "request": {
+    "sku": "CALCA-001-42",
+    "customer": {
+      "height": 180,
+      "weight": 78,
+      "chest": 102,
+      "waist": 88,
+      "hip": 100,
+      "shoulder": 45
+    },
+    "fit_preference": "regular",
+    "channel": "api"
+  }
+}

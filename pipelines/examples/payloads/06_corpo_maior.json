@@ -1,0 +1,19 @@
+{
+  "name": "Perfil maior — deve tender a L ou XL",
+  "expect": {
+    "recommended_size_in": ["L", "XL"]
+  },
+  "request": {
+    "sku": "CAMISETA-001-M",
+    "customer": {
+      "height": 188,
+      "weight": 98,
+      "chest": 116,
+      "waist": 104,
+      "hip": 112,
+      "shoulder": 50
+    },
+    "fit_preference": "regular",
+    "channel": "api"
+  }
+}

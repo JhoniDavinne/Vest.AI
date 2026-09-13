@@ -1,0 +1,19 @@
+{
+  "name": "Camiseta Essential — mesma pessoa, preferência solta",
+  "expect": {
+    "recommended_size_in": ["M", "L"]
+  },
+  "request": {
+    "sku": "CAMISETA-001-M",
+    "customer": {
+      "height": 180,
+      "weight": 78,
+      "chest": 102,
+      "waist": 88,
+      "hip": 100,
+      "shoulder": 45
+    },
+    "fit_preference": "loose",
+    "channel": "api"
+  }
+}

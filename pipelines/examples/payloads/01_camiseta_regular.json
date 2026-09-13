@@ -1,0 +1,21 @@
+{
+  "name": "Camiseta Essential — perfil demo, preferência regular",
+  "expect": {
+    "recommended_size": "M",
+    "min_score": 8.5,
+    "max_score": 9.0
+  },
+  "request": {
+    "sku": "CAMISETA-001-M",
+    "customer": {
+      "height": 180,
+      "weight": 78,
+      "chest": 102,
+      "waist": 88,
+      "hip": 100,
+      "shoulder": 45
+    },
+    "fit_preference": "regular",
+    "channel": "api"
+  }
+}

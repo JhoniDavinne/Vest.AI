@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500" role="img" aria-label="Jeans Skinny Stretch">
+  <defs>
+    <linearGradient id="bg-calca-jeans" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7F4EF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="fab-calca-jeans" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A5C" stop-opacity="1"/>
+      <stop offset="1" stop-color="#2B3A5C" stop-opacity="0.82"/>
+    </linearGradient>
+    <filter id="shadow-calca-jeans" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#141416" flood-opacity="0.16"/>
+    </filter>
+    <pattern id="grid-calca-jeans" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#141416" stroke-opacity="0.05"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg-calca-jeans)"/>
+  <rect width="400" height="500" fill="url(#grid-calca-jeans)"/>
+  <circle cx="330" cy="90" r="120" fill="#2B3A5C" fill-opacity="0.10"/>
+  <g filter="url(#shadow-calca-jeans)">
+    <path d="M125 60 L275 60 L290 460 L215 460 L200 220 L185 460 L110 460 Z" fill="url(#fab-calca-jeans)" stroke="#C9D3E8" stroke-opacity="0.35" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+  <text x="28" y="462" font-family="Georgia, serif" font-size="22" fill="#141416">Jeans Skinny Stretch</text>
+  <text x="28" y="484" font-family="Helvetica, Arial, sans-serif" font-size="11" letter-spacing="2" fill="#6F6B66">DENIM SUL</text>
+</svg>

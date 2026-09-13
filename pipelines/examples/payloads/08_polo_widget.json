@@ -1,0 +1,20 @@
+{
+  "name": "Polo via canal widget (chave B2B)",
+  "use_api_key": true,
+  "expect": {
+    "recommended_size_in": ["S", "M", "L", "XL"]
+  },
+  "request": {
+    "sku": "POLO-001-M",
+    "customer": {
+      "height": 180,
+      "weight": 78,
+      "chest": 102,
+      "waist": 88,
+      "hip": 100,
+      "shoulder": 45
+    },
+    "fit_preference": "regular",
+    "channel": "widget"
+  }
+}

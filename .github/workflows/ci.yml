@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  api-and-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar API
+        working-directory: apps/api
+        run: pip install -e ".[dev]"
+      - name: Pytest
+        working-directory: apps/api
+        run: python -m pytest
+      - name: Pipeline de exemplos
+        run: python pipelines/examples/run_examples.py --inprocess --assert
+
+  widget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run test:widget
+      - run: npm run typecheck --workspace packages/widget --if-present

@@ -1,0 +1,20 @@
+{
+  "name": "Avaliar SKU L — score muda, recomendado continua M",
+  "expect": {
+    "recommended_size": "M",
+    "evaluated_size": "L"
+  },
+  "request": {
+    "sku": "CAMISETA-001-L",
+    "customer": {
+      "height": 180,
+      "weight": 78,
+      "chest": 102,
+      "waist": 88,
+      "hip": 100,
+      "shoulder": 45
+    },
+    "fit_preference": "regular",
+    "channel": "api"
+  }
+}

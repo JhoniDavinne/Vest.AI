@@ -1,0 +1,157 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------ */
+/* Identidade VESTE.AI - base neutra quente, acento terracota          */
+/* ------------------------------------------------------------------ */
+:root {
+  --ink: #141416;
+  --ink-2: #2a2a2e;
+  --stone: #6f6b66;
+  --mist: #e9e5df;
+  --ivory: #f7f4ef;
+  --paper: #ffffff;
+  --terracotta: #c4623a;
+  --terracotta-dark: #a24e2c;
+  --sage: #5f7f6a;
+  --amber: #c99a3b;
+  --clay: #b4553f;
+  --slate: #8a96a3;
+
+  /* shadcn tokens */
+  --background: var(--ivory);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--ivory);
+  --secondary: #efebe4;
+  --secondary-foreground: var(--ink);
+  --muted: #f1ede7;
+  --muted-foreground: var(--stone);
+  --accent: var(--terracotta);
+  --accent-foreground: #ffffff;
+  --destructive: #b4553f;
+  --border: var(--mist);
+  --input: var(--mist);
+  --ring: var(--ink);
+  --radius: 0.9rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-stone: var(--stone);
+  --color-mist: var(--mist);
+  --color-ivory: var(--ivory);
+  --color-paper: var(--paper);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-dark: var(--terracotta-dark);
+  --color-sage: var(--sage);
+  --color-amber: var(--amber);
+  --color-clay: var(--clay);
+  --color-slate: var(--slate);
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-2xl: calc(var(--radius) + 16px);
+
+  --shadow-soft: 0 1px 2px rgba(20, 20, 22, 0.04), 0 8px 24px -12px rgba(20, 20, 22, 0.18);
+  --shadow-lift: 0 12px 40px -16px rgba(20, 20, 22, 0.28);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/40;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+  ::selection {
+    background: rgba(196, 98, 58, 0.18);
+  }
+}
+
+@utility container-veste {
+  @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+}
+
+@utility grain {
+  background-image:
+    radial-gradient(at 20% 10%, rgba(196, 98, 58, 0.08) 0, transparent 45%),
+    radial-gradient(at 85% 90%, rgba(95, 127, 106, 0.08) 0, transparent 40%);
+}
+
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+@utility shadow-lift {
+  box-shadow: var(--shadow-lift);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility eyebrow {
+  @apply text-[11px] font-medium uppercase tracking-[0.18em] text-stone;
+}
+
+/* Textura editorial sutil no fundo */
+.bg-editorial {
+  background-color: var(--ivory);
+  background-image:
+    linear-gradient(rgba(20, 20, 22, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 20, 22, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 90%);
+}
+
+/* Scrollbar discreta */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d9d3cb;
+  border-radius: 999px;
+  border: 3px solid var(--ivory);
+}

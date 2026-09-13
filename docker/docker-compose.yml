@@ -1,0 +1,53 @@
+name: veste-ai
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: veste
+      POSTGRES_PASSWORD: veste
+      POSTGRES_DB: veste_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - veste_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veste -d veste_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    environment:
+      VESTE_DATABASE_URL: postgresql+psycopg://veste:veste@db:5432/veste_ai
+      VESTE_ENVIRONMENT: development
+      VESTE_AUTO_CREATE_SCHEMA: "true"
+      VESTE_AUTO_SEED: "true"
+      VESTE_CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_DEMO_API_KEY: veste_demo_key_loja_parceira
+    environment:
+      API_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_DEMO_API_KEY: veste_demo_key_loja_parceira
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  veste_pg:

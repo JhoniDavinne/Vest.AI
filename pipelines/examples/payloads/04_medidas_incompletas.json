@@ -1,0 +1,15 @@
+{
+  "name": "Medidas incompletas — confiança baixa",
+  "expect": {
+    "confidence": "low"
+  },
+  "request": {
+    "sku": "CAMISETA-001-M",
+    "customer": {
+      "height": 180,
+      "chest": 102
+    },
+    "fit_preference": "regular",
+    "channel": "api"
+  }
+}

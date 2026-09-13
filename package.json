@@ -1,0 +1,31 @@
+{
+  "name": "veste-ai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "VESTE.AI Platform - MVP de recomendacao de tamanho e estimativa de caimento",
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace apps/web",
+    "build:web": "npm run build --workspace apps/web",
+    "lint:web": "npm run lint --workspace apps/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:web": "npm run test --workspace apps/web",
+    "build:widget": "npm run build --workspace packages/widget",
+    "test:widget": "npm run test --workspace packages/widget",
+    "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
+    "test:api": "cd apps/api && python -m pytest",
+    "seed": "cd apps/api && python -m app.seed.run",
+    "docs:pdf": "python scripts/build_docs_pdf.py",
+    "pipeline:examples": "python pipelines/examples/run_examples.py --inprocess --assert",
+    "pipeline:examples:live": "python pipelines/examples/run_examples.py --live --assert",
+    "pipeline:test": "python pipelines/tests/run_all.py",
+    "docker:up": "docker compose -f docker/docker-compose.yml up --build",
+    "docker:down": "docker compose -f docker/docker-compose.yml down -v"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

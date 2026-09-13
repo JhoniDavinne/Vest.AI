@@ -1,0 +1,19 @@
+{
+  "name": "Perfil menor — deve tender a S ou M",
+  "expect": {
+    "recommended_size_in": ["S", "M"]
+  },
+  "request": {
+    "sku": "CAMISETA-001-M",
+    "customer": {
+      "height": 165,
+      "weight": 58,
+      "chest": 88,
+      "waist": 74,
+      "hip": 90,
+      "shoulder": 40
+    },
+    "fit_preference": "regular",
+    "channel": "api"
+  }
+}

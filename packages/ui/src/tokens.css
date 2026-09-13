@@ -1,0 +1,23 @@
+/* Tokens CSS da identidade VESTE.AI (espelham tokens.ts) */
+:root {
+  --veste-ink: #141416;
+  --veste-ink-2: #2a2a2e;
+  --veste-stone: #6f6b66;
+  --veste-mist: #e9e5df;
+  --veste-ivory: #f7f4ef;
+  --veste-paper: #ffffff;
+  --veste-terracotta: #c4623a;
+  --veste-terracotta-dark: #a24e2c;
+  --veste-sage: #5f7f6a;
+  --veste-amber: #c99a3b;
+  --veste-clay: #b4553f;
+  --veste-slate: #8a96a3;
+
+  --veste-radius-sm: 8px;
+  --veste-radius-md: 14px;
+  --veste-radius-lg: 22px;
+  --veste-radius-xl: 32px;
+
+  --veste-shadow-soft: 0 1px 2px rgba(20, 20, 22, 0.04), 0 8px 24px -12px rgba(20, 20, 22, 0.18);
+  --veste-shadow-lift: 0 12px 40px -16px rgba(20, 20, 22, 0.28);
+}

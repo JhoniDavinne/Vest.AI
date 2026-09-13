@@ -1,0 +1,708 @@
+[
+  {
+    "sku_prefix": "CAMISETA-001",
+    "slug": "camiseta-essential-algodao",
+    "name": "Camiseta Essential Algodão",
+    "brand": "Atelier Norte",
+    "category": "tshirt",
+    "audience": "unissex",
+    "color": "Off-white",
+    "price_cents": 8990,
+    "description": "Camiseta de algodão penteado com toque macio e caimento regular. Gola careca reforçada e costura dupla na barra. Peça-chave do guarda-roupa.",
+    "modeling": "regular",
+    "fabric": "Malha de algodão penteado 30.1",
+    "composition": "100% algodão",
+    "elasticity_pct": 5,
+    "care": "Lavar à máquina em água fria. Não usar alvejante.",
+    "image": "camiseta-essential.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 106,
+          "waist": 106,
+          "hip": 102,
+          "shoulder": 44.0,
+          "length": 69,
+          "sleeve": 20,
+          "width": 53.0
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 111,
+          "waist": 111,
+          "hip": 107,
+          "shoulder": 45.0,
+          "length": 71,
+          "sleeve": 21,
+          "width": 55.5
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 116,
+          "waist": 116,
+          "hip": 112,
+          "shoulder": 46.0,
+          "length": 73,
+          "sleeve": 22,
+          "width": 58.0
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 121,
+          "waist": 121,
+          "hip": 117,
+          "shoulder": 47.0,
+          "length": 75,
+          "sleeve": 23,
+          "width": 60.5
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "CAMISETA-002",
+    "slug": "camiseta-oversized-drop",
+    "name": "Camiseta Oversized Drop Shoulder",
+    "brand": "Studio Vão",
+    "category": "tshirt",
+    "audience": "unissex",
+    "color": "Preto",
+    "price_cents": 12990,
+    "description": "Modelagem oversized com ombro caído e comprimento alongado. Malha encorpada que mantém a estrutura da peça.",
+    "modeling": "oversized",
+    "fabric": "Malha de algodão e viscose 260 g/m²",
+    "composition": "70% algodão, 30% viscose",
+    "elasticity_pct": 6,
+    "care": "Lavar do avesso. Secar à sombra.",
+    "image": "camiseta-oversized.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 118,
+          "waist": 118,
+          "hip": 116,
+          "shoulder": 50.5,
+          "length": 74,
+          "sleeve": 23,
+          "width": 59.5
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 124,
+          "waist": 124,
+          "hip": 122,
+          "shoulder": 52.0,
+          "length": 76,
+          "sleeve": 24,
+          "width": 62.0
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 130,
+          "waist": 130,
+          "hip": 128,
+          "shoulder": 53.5,
+          "length": 78,
+          "sleeve": 25,
+          "width": 64.5
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 136,
+          "waist": 136,
+          "hip": 134,
+          "shoulder": 55.0,
+          "length": 80,
+          "sleeve": 26,
+          "width": 67.0
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "CAMISA-001",
+    "slug": "camisa-oxford-slim",
+    "name": "Camisa Oxford Slim",
+    "brand": "Casa Linho",
+    "category": "shirt",
+    "audience": "masculino",
+    "color": "Azul claro",
+    "price_cents": 24990,
+    "description": "Camisa em tecido oxford com modelagem slim, colarinho estruturado e punhos ajustáveis. Ideal para compor looks de trabalho e ocasiões casuais.",
+    "modeling": "slim",
+    "fabric": "Oxford de algodão",
+    "composition": "100% algodão",
+    "elasticity_pct": 2,
+    "care": "Passar em temperatura média.",
+    "image": "camisa-oxford.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 103,
+          "waist": 95,
+          "hip": 101,
+          "shoulder": 44.5,
+          "length": 73,
+          "sleeve": 63,
+          "width": 51.5
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 108,
+          "waist": 100,
+          "hip": 106,
+          "shoulder": 45.5,
+          "length": 75,
+          "sleeve": 64,
+          "width": 54.0
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 113,
+          "waist": 105,
+          "hip": 111,
+          "shoulder": 46.5,
+          "length": 77,
+          "sleeve": 65,
+          "width": 56.5
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 118,
+          "waist": 110,
+          "hip": 116,
+          "shoulder": 47.5,
+          "length": 79,
+          "sleeve": 66,
+          "width": 59.0
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "CALCA-001",
+    "slug": "calca-alfaiataria-regular",
+    "name": "Calça Alfaiataria Regular",
+    "brand": "Casa Linho",
+    "category": "pants",
+    "audience": "unissex",
+    "color": "Cinza grafite",
+    "price_cents": 32990,
+    "description": "Calça de alfaiataria com cintura média, pregas frontais discretas e caimento reto. Tecido com leve elastano para conforto ao longo do dia.",
+    "modeling": "regular",
+    "fabric": "Alfaiataria com elastano",
+    "composition": "64% poliéster, 33% viscose, 3% elastano",
+    "elasticity_pct": 6,
+    "care": "Lavar a seco ou à mão.",
+    "image": "calca-alfaiataria.svg",
+    "sizes": [
+      {
+        "size_label": "38",
+        "measurements": {
+          "chest": null,
+          "waist": 83,
+          "hip": 98,
+          "shoulder": null,
+          "length": 106,
+          "sleeve": null,
+          "width": 38
+        }
+      },
+      {
+        "size_label": "40",
+        "measurements": {
+          "chest": null,
+          "waist": 87,
+          "hip": 102,
+          "shoulder": null,
+          "length": 107,
+          "sleeve": null,
+          "width": 39
+        }
+      },
+      {
+        "size_label": "42",
+        "measurements": {
+          "chest": null,
+          "waist": 91,
+          "hip": 106,
+          "shoulder": null,
+          "length": 108,
+          "sleeve": null,
+          "width": 40
+        }
+      },
+      {
+        "size_label": "44",
+        "measurements": {
+          "chest": null,
+          "waist": 95,
+          "hip": 110,
+          "shoulder": null,
+          "length": 109,
+          "sleeve": null,
+          "width": 41
+        }
+      },
+      {
+        "size_label": "46",
+        "measurements": {
+          "chest": null,
+          "waist": 99,
+          "hip": 114,
+          "shoulder": null,
+          "length": 110,
+          "sleeve": null,
+          "width": 42
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "CALCA-002",
+    "slug": "calca-jeans-skinny-stretch",
+    "name": "Calça Jeans Skinny Stretch",
+    "brand": "Denim Sul",
+    "category": "pants",
+    "audience": "feminino",
+    "color": "Índigo escuro",
+    "price_cents": 27990,
+    "description": "Jeans skinny com alto teor de elastano, cintura alta e lavagem escura. Acompanha o movimento do corpo sem perder a forma.",
+    "modeling": "slim",
+    "fabric": "Denim stretch 10 oz",
+    "composition": "92% algodão, 6% poliéster, 2% elastano",
+    "elasticity_pct": 14,
+    "care": "Lavar do avesso em água fria.",
+    "image": "calca-jeans.svg",
+    "sizes": [
+      {
+        "size_label": "36",
+        "measurements": {
+          "chest": null,
+          "waist": 70,
+          "hip": 92,
+          "shoulder": null,
+          "length": 102,
+          "sleeve": null,
+          "width": 26
+        }
+      },
+      {
+        "size_label": "38",
+        "measurements": {
+          "chest": null,
+          "waist": 74,
+          "hip": 96,
+          "shoulder": null,
+          "length": 103,
+          "sleeve": null,
+          "width": 27
+        }
+      },
+      {
+        "size_label": "40",
+        "measurements": {
+          "chest": null,
+          "waist": 78,
+          "hip": 100,
+          "shoulder": null,
+          "length": 104,
+          "sleeve": null,
+          "width": 28
+        }
+      },
+      {
+        "size_label": "42",
+        "measurements": {
+          "chest": null,
+          "waist": 82,
+          "hip": 104,
+          "shoulder": null,
+          "length": 105,
+          "sleeve": null,
+          "width": 29
+        }
+      },
+      {
+        "size_label": "44",
+        "measurements": {
+          "chest": null,
+          "waist": 86,
+          "hip": 108,
+          "shoulder": null,
+          "length": 106,
+          "sleeve": null,
+          "width": 30
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "VESTIDO-001",
+    "slug": "vestido-midi-malha",
+    "name": "Vestido Midi Malha Canelada",
+    "brand": "Maré Atelier",
+    "category": "dress",
+    "audience": "feminino",
+    "color": "Terracota",
+    "price_cents": 35990,
+    "description": "Vestido midi em malha canelada com elasticidade, decote redondo e fenda lateral. Modelagem regular que acompanha as curvas sem marcar.",
+    "modeling": "regular",
+    "fabric": "Malha canelada viscose",
+    "composition": "92% viscose, 8% elastano",
+    "elasticity_pct": 16,
+    "care": "Lavar à mão. Não torcer.",
+    "image": "vestido-midi.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 91,
+          "waist": 75,
+          "hip": 97,
+          "shoulder": 37.0,
+          "length": 116,
+          "sleeve": 11.5,
+          "width": 45.5
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 96,
+          "waist": 80,
+          "hip": 102,
+          "shoulder": 38.0,
+          "length": 118,
+          "sleeve": 12.0,
+          "width": 48.0
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 101,
+          "waist": 85,
+          "hip": 107,
+          "shoulder": 39.0,
+          "length": 120,
+          "sleeve": 12.5,
+          "width": 50.5
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 106,
+          "waist": 90,
+          "hip": 112,
+          "shoulder": 40.0,
+          "length": 122,
+          "sleeve": 13.0,
+          "width": 53.0
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "JAQUETA-001",
+    "slug": "jaqueta-bomber-relaxed",
+    "name": "Jaqueta Bomber Relaxed",
+    "brand": "Studio Vão",
+    "category": "jacket",
+    "audience": "unissex",
+    "color": "Verde oliva",
+    "price_cents": 45990,
+    "description": "Bomber em nylon matte com forro leve, punhos e barra em ribana. Modelagem relaxed pensada para sobreposição.",
+    "modeling": "relaxed",
+    "fabric": "Nylon matte com forro",
+    "composition": "100% poliamida",
+    "elasticity_pct": 1,
+    "care": "Lavar à máquina em ciclo delicado.",
+    "image": "jaqueta-bomber.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 116,
+          "waist": 110,
+          "hip": 106,
+          "shoulder": 47.8,
+          "length": 66,
+          "sleeve": 62,
+          "width": 58
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 122,
+          "waist": 116,
+          "hip": 112,
+          "shoulder": 49.0,
+          "length": 68,
+          "sleeve": 63,
+          "width": 61
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 128,
+          "waist": 122,
+          "hip": 118,
+          "shoulder": 50.2,
+          "length": 70,
+          "sleeve": 64,
+          "width": 64
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 134,
+          "waist": 128,
+          "hip": 124,
+          "shoulder": 51.4,
+          "length": 72,
+          "sleeve": 65,
+          "width": 67
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "POLO-001",
+    "slug": "polo-piquet-regular",
+    "name": "Polo Piquet Regular",
+    "brand": "Atelier Norte",
+    "category": "polo",
+    "audience": "masculino",
+    "color": "Marinho",
+    "price_cents": 15990,
+    "description": "Polo em piquet de algodão com gola e punhos em retilínea. Caimento regular, comprimento clássico.",
+    "modeling": "regular",
+    "fabric": "Piquet de algodão",
+    "composition": "100% algodão",
+    "elasticity_pct": 4,
+    "care": "Lavar à máquina em água fria.",
+    "image": "polo-piquet.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 105,
+          "waist": 101,
+          "hip": 103,
+          "shoulder": 44.5,
+          "length": 70,
+          "sleeve": 21,
+          "width": 52.5
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 110,
+          "waist": 106,
+          "hip": 108,
+          "shoulder": 45.5,
+          "length": 72,
+          "sleeve": 22,
+          "width": 55.0
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 115,
+          "waist": 111,
+          "hip": 113,
+          "shoulder": 46.5,
+          "length": 74,
+          "sleeve": 23,
+          "width": 57.5
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 120,
+          "waist": 116,
+          "hip": 118,
+          "shoulder": 47.5,
+          "length": 76,
+          "sleeve": 24,
+          "width": 60.0
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "MOLETOM-001",
+    "slug": "moletom-canguru-oversized",
+    "name": "Moletom Canguru Oversized",
+    "brand": "Studio Vão",
+    "category": "hoodie",
+    "audience": "unissex",
+    "color": "Cinza mescla",
+    "price_cents": 22990,
+    "description": "Moletom felpado com capuz duplo, bolso canguru e modelagem oversized. Toque macio e estrutura encorpada.",
+    "modeling": "oversized",
+    "fabric": "Moletom felpado 320 g/m²",
+    "composition": "80% algodão, 20% poliéster",
+    "elasticity_pct": 6,
+    "care": "Lavar do avesso. Não usar secadora.",
+    "image": "moletom-canguru.svg",
+    "sizes": [
+      {
+        "size_label": "S",
+        "measurements": {
+          "chest": 122,
+          "waist": 116,
+          "hip": 112,
+          "shoulder": 52.8,
+          "length": 70,
+          "sleeve": 59,
+          "width": 61
+        }
+      },
+      {
+        "size_label": "M",
+        "measurements": {
+          "chest": 128,
+          "waist": 122,
+          "hip": 118,
+          "shoulder": 54.0,
+          "length": 72,
+          "sleeve": 60,
+          "width": 64
+        }
+      },
+      {
+        "size_label": "L",
+        "measurements": {
+          "chest": 134,
+          "waist": 128,
+          "hip": 124,
+          "shoulder": 55.2,
+          "length": 74,
+          "sleeve": 61,
+          "width": 67
+        }
+      },
+      {
+        "size_label": "XL",
+        "measurements": {
+          "chest": 140,
+          "waist": 134,
+          "hip": 130,
+          "shoulder": 56.4,
+          "length": 76,
+          "sleeve": 62,
+          "width": 70
+        }
+      }
+    ]
+  },
+  {
+    "sku_prefix": "SHORTS-001",
+    "slug": "shorts-sarja-relaxed",
+    "name": "Shorts Sarja Relaxed",
+    "brand": "Denim Sul",
+    "category": "shorts",
+    "audience": "unissex",
+    "color": "Bege areia",
+    "price_cents": 14990,
+    "description": "Shorts em sarja leve com cós elástico nas costas e cordão. Modelagem relaxed com comprimento acima do joelho.",
+    "modeling": "relaxed",
+    "fabric": "Sarja de algodão leve",
+    "composition": "98% algodão, 2% elastano",
+    "elasticity_pct": 5,
+    "care": "Lavar à máquina em água fria.",
+    "image": "shorts-sarja.svg",
+    "sizes": [
+      {
+        "size_label": "38",
+        "measurements": {
+          "chest": null,
+          "waist": 84,
+          "hip": 102,
+          "shoulder": null,
+          "length": 48,
+          "sleeve": null,
+          "width": 56
+        }
+      },
+      {
+        "size_label": "40",
+        "measurements": {
+          "chest": null,
+          "waist": 88,
+          "hip": 106,
+          "shoulder": null,
+          "length": 49,
+          "sleeve": null,
+          "width": 57
+        }
+      },
+      {
+        "size_label": "42",
+        "measurements": {
+          "chest": null,
+          "waist": 92,
+          "hip": 110,
+          "shoulder": null,
+          "length": 50,
+          "sleeve": null,
+          "width": 58
+        }
+      },
+      {
+        "size_label": "44",
+        "measurements": {
+          "chest": null,
+          "waist": 96,
+          "hip": 114,
+          "shoulder": null,
+          "length": 51,
+          "sleeve": null,
+          "width": 59
+        }
+      },
+      {
+        "size_label": "46",
+        "measurements": {
+          "chest": null,
+          "waist": 100,
+          "hip": 118,
+          "shoulder": null,
+          "length": 52,
+          "sleeve": null,
+          "width": 60
+        }
+      }
+    ]
+  }
+]
