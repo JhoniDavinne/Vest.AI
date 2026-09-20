@@ -1,0 +1,49 @@
+# apps/tryon — ambiente ISOLADO do CatVTON (Python 3.12). NAO instalar no venv de apps/api.
+#
+# Base: requirements.txt oficial do CatVTON (branch `edited`, commit 7818397f25613beedb3d861a34769f607cfcf3b1).
+# Desvios em relacao ao oficial estao marcados com "DESVIO" e justificados em
+# docs/implementation/ETAPA_05_CATVTON_LOCAL.md.
+
+# --- PyTorch ---------------------------------------------------------------
+# DESVIO: oficial pinava torch==2.4.0/torchvision==0.19.0, que NAO possuem kernels para
+# sm_120 (RTX 50 / Blackwell). Usa-se a primeira serie estavel com suporte (2.7.x) em build CUDA 12.8.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.1+cu128
+torchvision==0.22.1+cu128
+
+# --- Oficial (mantidos) ----------------------------------------------------
+# DESVIO: oficial accelerate==0.31.0 e incompativel com o proprio pin oficial peft>=0.17.0
+# (peft importa accelerate.utils.memory.clear_device_cache, inexistente em 0.31). Menor versao que resolve: 0.33.0.
+accelerate==0.33.0
+matplotlib==3.9.1
+numpy==1.26.4
+pillow==10.3.0
+PyYAML==6.0.1
+scipy==1.13.1
+scikit-image==0.24.0
+tqdm==4.66.4
+transformers==4.46.3
+fvcore==0.1.5.post20221221
+cloudpickle==3.0.0
+omegaconf==2.3.0
+pycocotools==2.0.8
+av==12.3.0  # importado pelo detectron2 vendorizado (detectron2/data/...)
+peft==0.17.0  # oficial: >=0.17.0 (pin exato para reprodutibilidade)
+huggingface_hub>=0.34.0,<2.0
+
+# DESVIO: oficial usa `git+https://github.com/huggingface/diffusers.git` (HEAD, nao reproduzivel);
+# pin em release estavel contemporanea ao commit vendorizado.
+diffusers==0.32.2
+
+# DESVIO: oficial usa opencv_python (com GUI); headless evita dependencias de janela no servidor.
+opencv-python-headless==4.10.0.84
+
+# Nao instalados (nao usados pelo servico): gradio==4.41.0, setuptools==51.0.0.
+
+# --- Servico local (FastAPI) -----------------------------------------------
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+python-multipart>=0.0.9
+pydantic-settings>=2.3,<3.0
+httpx>=0.27
+pytest>=8  # testes unitarios do servico (sem GPU) em apps/tryon/tests

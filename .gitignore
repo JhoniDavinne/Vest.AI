@@ -16,5 +16,13 @@ apps/api/veste_ai.db
 
 .env
 .env.local
+
+# apps/tryon (CatVTON local): ambiente isolado, codigo vendorizado (clone pinado), checkpoints/cache HF e saidas
+apps/tryon/.venv
+apps/tryon/vendor/CatVTON
+apps/tryon/models
+apps/tryon/output
+apps/tryon/tmp
+apps/tryon/densepose_
 .DS_Store
 Thumbs.db
