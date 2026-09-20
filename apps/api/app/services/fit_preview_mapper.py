@@ -7,8 +7,8 @@ from ..models import Product, SKUSize
 from ..schemas import FitPreviewPayload, RegionDetail
 
 FIT_PREVIEW_DISCLAIMER = (
-    "Silhueta estilizada com faixas de caimento estimadas. "
-    "Não substitui prova física da peça nem representa o seu corpo."
+    "Visualização 3D estimada com base nas medidas informadas. "
+    "Não substitui a prova física da peça."
 )
 
 
@@ -25,6 +25,7 @@ def build_fit_preview(
     return FitPreviewPayload(
         body={
             "height": body.height,
+            "weight": body.weight,
             "chest": body.chest,
             "waist": body.waist,
             "hip": body.hip,

@@ -66,6 +66,7 @@ export function buildPreviewPayloadFromRecommendation(
   options?: {
     body?: {
       height?: number | null;
+      weight?: number | null;
       chest?: number | null;
       waist?: number | null;
       hip?: number | null;
@@ -89,6 +90,7 @@ export function buildPreviewPayloadFromRecommendation(
       waist: options?.body?.waist ?? (bodyFromRegions.waist as number | undefined) ?? null,
       hip: options?.body?.hip ?? (bodyFromRegions.hip as number | undefined) ?? null,
       shoulder: options?.body?.shoulder ?? (bodyFromRegions.shoulder as number | undefined) ?? null,
+      weight: options?.body?.weight ?? null,
       photoRatios: options?.photo
         ? {
             shoulder_hip_ratio: options.photo.shoulder_hip_ratio,

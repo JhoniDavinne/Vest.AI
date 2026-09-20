@@ -1,5 +1,17 @@
-export const FIT_PREVIEW_DISCLAIMER =
+export const FIT_PREVIEW_DISCLAIMER_SILHOUETTE =
   "Silhueta estilizada com faixas de caimento estimadas. Não substitui prova física da peça nem representa o seu corpo.";
+
+export const FIT_PREVIEW_DISCLAIMER_REAL =
+  "Visualização 3D estimada com base nas medidas informadas. Não substitui a prova física da peça.";
+
+/** Texto padrao do payload (avatar real). O componente escolhe pelo renderer ativo. */
+export const FIT_PREVIEW_DISCLAIMER = FIT_PREVIEW_DISCLAIMER_REAL;
+
+export type PreviewRendererKind = "human" | "silhouette";
+
+export function resolvePreviewDisclaimer(renderer: PreviewRendererKind): string {
+  return renderer === "human" ? FIT_PREVIEW_DISCLAIMER_REAL : FIT_PREVIEW_DISCLAIMER_SILHOUETTE;
+}
 
 /** Cores alinhadas ao RegionGrid da aplicacao web. */
 export const STATUS_COLOR_HEX: Record<string, string> = {
@@ -24,6 +36,7 @@ export const REFERENCE_BODY = {
   waist: 82,
   hip: 98,
   shoulder: 44,
+  weight: 72,
 } as const;
 
 export const REGION_NODE: Record<string, string> = {

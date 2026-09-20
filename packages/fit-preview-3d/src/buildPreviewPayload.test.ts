@@ -20,6 +20,6 @@ describe("buildPreviewPayloadFromRecommendation", () => {
     expect(payload.garment.category).toBe("tshirt");
     expect(payload.body.chest).toBe(102);
     expect(payload.regions).toHaveLength(2);
-    expect(payload.disclaimer).toContain("Silhueta");
+    expect(payload.disclaimer).toContain("Visualização 3D estimada");
   });
 });

@@ -174,6 +174,8 @@ export interface FitPreviewBodyPayload {
   waist: number | null;
   hip: number | null;
   shoulder: number | null;
+  /** Peso (kg). Apenas deformacao visual do avatar; nao entra no score. */
+  weight?: number | null;
   photoRatios: {
     shoulder_hip_ratio: number | null;
     waist_hip_ratio: number | null;

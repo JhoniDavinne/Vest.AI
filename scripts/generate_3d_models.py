@@ -176,6 +176,35 @@ def main() -> None:
             "marque placeholder=false."
         ),
     }
+    avatar_real = MODELS / "avatar" / "avatar_base.glb"
+    if avatar_real.exists():
+        manifest["avatar"] = {
+            "url": "avatar/avatar_base.glb",
+            "placeholder": False,
+            "type": "human",
+            "baseMeasurements": {
+                "height": 175,
+                "chest": 96,
+                "waist": 82,
+                "hips": 98,
+                "shoulders": 44,
+                "weight": 72,
+            },
+        }
+        manifest["avatars"] = {"default": dict(manifest["avatar"])}
+        manifest["note"] = (
+            "Avatar humano GLB CC0 em avatar/avatar_base.glb. "
+            "Camiseta real em garments/tshirt_basic.glb quando presente; demais pecas usam GarmentPrimitive."
+        )
+    tshirt_real = MODELS / "garments" / "tshirt_basic.glb"
+    if tshirt_real.exists():
+        manifest["garments"]["tshirt"] = {
+            "url": "garments/tshirt_basic.glb",
+            "placeholder": False,
+            "type": "tshirt",
+            "baseSize": "M",
+            "baseMeasurements": {"chest": 111, "waist": 111, "length": 71, "shoulder": 45},
+        }
     (MODELS / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"Gerados {len(BODY_PARTS)} segmentos corporais + {len(GARMENT_SHAPES)} pecas em {MODELS}")
 

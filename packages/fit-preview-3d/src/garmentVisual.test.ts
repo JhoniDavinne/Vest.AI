@@ -53,7 +53,8 @@ describe("computeGarmentVisualState", () => {
     const state = computeGarmentVisualState(payload({ fabric: "Malha de algodão", elasticity_pct: 5 }));
     expect(state.color).toBe("#1a1a1a");
     expect(state.material).toBe("knit");
-    expect(state.opacity).toBeLessThan(1);
+    expect(state.opacity).toBe(1);
+    expect(state.metalness).toBe(0);
     for (const s of state.scale) {
       expect(s).toBeGreaterThanOrEqual(GARMENT_SCALE_MIN);
       expect(s).toBeLessThanOrEqual(GARMENT_SCALE_MAX);

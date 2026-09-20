@@ -2,22 +2,26 @@
 
 import * as React from "react";
 import { useGLTF } from "@react-three/drei";
-import { Group, Material, MeshStandardMaterial, type Object3D } from "three";
+import { DoubleSide, Group, Material, MeshStandardMaterial, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { GarmentVisualState } from "./garmentVisual";
-import { disposeMaterials, forEachMesh, measureObject, metricCorrectionFactor, placeMetricObject } from "./modelUtils";
+import {
+  disposeMaterials,
+  forEachMesh,
+  hasAlbedoMap,
+  measureObject,
+  metricCorrectionFactor,
+  placeMetricObject,
+} from "./modelUtils";
 
 export interface GarmentModel {
   object: Object3D;
 }
 
 /**
- * Carrega a peca GLB por URL (resolvida pelo manifest), clona a cena cacheada,
- * aplica escala metrica e substitui os materiais por um `MeshStandardMaterial`
- * proprio colorido/ajustado pelo `GarmentVisualState`.
- *
- * Os materiais criados aqui sao descartados no unmount; geometrias continuam
- * compartilhadas com o cache global do `useGLTF`.
+ * Carrega a peca GLB por URL (resolvida pelo manifest), clona a cena cacheada
+ * e aplica escala metrica. Materiais PBR com textura sao preservados (clone
+ * proprio); malhas sem mapa recebem tecido fosco derivado do payload.
  */
 export function useGarmentModel(url: string, visual: GarmentVisualState): GarmentModel {
   const gltf = useGLTF(url);
@@ -31,21 +35,39 @@ export function useGarmentModel(url: string, visual: GarmentVisualState): Garmen
     instance.updateMatrixWorld(true);
 
     const root = placeMetricObject(new Group());
+    root.name = "garment-root";
     root.add(instance);
     return root;
   }, [gltf.scene]);
 
-  // Materiais: um por mesh, atualizados in-place quando o estado visual muda.
   React.useEffect(() => {
     disposeMaterials(materialsRef.current);
     materialsRef.current = [];
     forEachMesh(object, (mesh) => {
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      mesh.renderOrder = 1;
+      const roughness = Math.min(0.9, Math.max(0.7, visual.roughness));
+      if (hasAlbedoMap(mesh.material)) {
+        const current = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+        const cloned = (current as MeshStandardMaterial).clone();
+        cloned.transparent = false;
+        cloned.opacity = 1;
+        cloned.depthWrite = true;
+        cloned.metalness = 0;
+        cloned.roughness = roughness;
+        cloned.side = DoubleSide;
+        mesh.material = cloned;
+        materialsRef.current.push(cloned);
+        return;
+      }
       const material = new MeshStandardMaterial({
         color: visual.color,
-        roughness: visual.roughness,
-        metalness: visual.metalness,
-        transparent: visual.opacity < 1,
-        opacity: visual.opacity,
+        roughness,
+        metalness: 0,
+        transparent: false,
+        opacity: 1,
+        side: DoubleSide,
       });
       mesh.material = material;
       materialsRef.current.push(material);
@@ -54,16 +76,11 @@ export function useGarmentModel(url: string, visual: GarmentVisualState): Garmen
       disposeMaterials(materialsRef.current);
       materialsRef.current = [];
     };
-  }, [object, visual.color, visual.roughness, visual.metalness, visual.opacity]);
-
-  React.useEffect(() => {
-    const [sx, sy, sz] = visual.scale;
-    const inner = object.children[0];
-    if (inner) {
-      inner.scale.set(sx, sy, sz);
-      inner.updateMatrixWorld(true);
-    }
-  }, [object, visual.scale]);
+  }, [object, visual.color, visual.roughness]);
 
   return { object };
+}
+
+export function preloadGarmentModel(url: string): void {
+  useGLTF.preload(url);
 }

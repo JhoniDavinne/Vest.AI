@@ -22,11 +22,11 @@ export function useWebGLAvailable(): boolean {
 export function useFitPreviewCanvasHeight(size: "full" | "medium" | "compact"): number {
   switch (size) {
     case "full":
-      return 420;
+      return 480;
     case "medium":
-      return 360;
+      return 400;
     case "compact":
-      return 320;
+      return 340;
     default: {
       const _exhaustive: never = size;
       return _exhaustive;
@@ -36,9 +36,9 @@ export function useFitPreviewCanvasHeight(size: "full" | "medium" | "compact"): 
 
 /** Altura maxima do canvas em viewports estreitas (evita Canvas alto demais no mobile). */
 export const MOBILE_CANVAS_HEIGHT: Record<"full" | "medium" | "compact", number> = {
-  full: 340,
-  medium: 300,
-  compact: 260,
+  full: 360,
+  medium: 320,
+  compact: 280,
 };
 
 const MOBILE_QUERY = "(max-width: 639px)";

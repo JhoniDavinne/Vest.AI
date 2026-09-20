@@ -91,9 +91,9 @@ export function computeGarmentVisualState(payload: FitPreviewPayload): GarmentVi
 
   return {
     color: parseGarmentColor(garment.color),
-    opacity: 0.94,
+    opacity: 1,
     roughness,
-    metalness: 0.04,
+    metalness: 0,
     scale: [clampGarmentScale(sx * volume), clampGarmentScale(sy), clampGarmentScale(sz * volume)],
     material,
   };

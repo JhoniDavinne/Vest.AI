@@ -39,7 +39,8 @@ export {
   mergeFitPreviewPayload,
 } from "./types";
 export type { FitPreview3DProps, FitPreviewPayload, FitPreviewSize, BodyScaleFactors } from "./types";
-export { FIT_PREVIEW_DISCLAIMER, STATUS_COLOR_HEX, DEFAULT_MODELS_BASE, REFERENCE_BODY } from "./constants";
+export { FIT_PREVIEW_DISCLAIMER, FIT_PREVIEW_DISCLAIMER_REAL, FIT_PREVIEW_DISCLAIMER_SILHOUETTE, resolvePreviewDisclaimer, STATUS_COLOR_HEX, DEFAULT_MODELS_BASE, REFERENCE_BODY } from "./constants";
+export type { PreviewRendererKind } from "./constants";
 export { computeBodyScale, parseGarmentColor, garmentScale } from "./scaleBody";
 export { useWebGLAvailable, useFitPreviewCanvasHeight, useResponsiveCanvasHeight, usePrefersReducedMotion } from "./useFitPreview";
 export { ensureFitPreviewStyles, FIT_PREVIEW_CSS } from "./styles";
@@ -54,7 +55,7 @@ export {
   isRenderableAsset,
   joinModelUrl,
 } from "./manifest";
-export type { ModelsManifest, ManifestAsset, AvatarManifestAsset, ResolvedAsset } from "./manifest";
+export type { ModelsManifest, ManifestAsset, AvatarManifestAsset, GarmentManifestAsset, ResolvedAsset } from "./manifest";
 export { useModelsManifest } from "./useModelsManifest";
 export type { ManifestStatus, ModelsManifestState } from "./useModelsManifest";
 
@@ -68,17 +69,31 @@ export {
   MORPH_AXES,
 } from "./avatarMorph";
 export type { AvatarMorphState, MorphAxis, MorphTargetMapping, MorphTargetNames } from "./avatarMorph";
-export { useAvatarModel } from "./useAvatarModel";
+export { computeAvatarDeformationProfile, classifyBone, selectAdapterKind, dampedBoneScale, profilesDifferVisually } from "./avatarDeformation";
+export type { AvatarDeformationProfile, AdapterKind, AvatarBaseMeasurements } from "./avatarDeformation";
+export {
+  detectAdapterKind,
+  applySkeletonAdapter,
+  applyRegionalScaleAdapter,
+  applyMorphTargetAdapter,
+  applyAvatarDeformation,
+} from "./avatarAdapters";
+export { useAvatarModel, preloadAvatarModel } from "./useAvatarModel";
 export type { AvatarModel } from "./useAvatarModel";
 
 // Peca
 export { computeGarmentVisualState, inferMaterial, MODELING_VOLUME } from "./garmentVisual";
 export type { GarmentVisualState } from "./garmentVisual";
-export { useGarmentModel } from "./useGarmentModel";
+export { computeGarmentTransformProfile, sizeVisualScale, regionFitScale } from "./garmentTransform";
+export type { GarmentTransformProfile } from "./garmentTransform";
+export { useGarmentModel, preloadGarmentModel } from "./useGarmentModel";
 export type { GarmentModel } from "./useGarmentModel";
 
 // Cena / camera
-export { metricPlacement, SCENE_UNITS_PER_METER, SCENE_FLOOR_Y, metricCorrectionFactor } from "./modelUtils";
+export { metricPlacement, SCENE_UNITS_PER_METER, SCENE_FLOOR_Y, metricCorrectionFactor, orientTPoseToCamera, isSceneDebugEnabled } from "./modelUtils";
 export { CAMERA_VIEWS, VIEW_AZIMUTH, stepDistance, clampDistance, poseForView, sphericalToPosition } from "./cameraViews";
 export type { CameraView } from "./cameraViews";
 export type { CameraCommand } from "./CameraRig";
+export { computeCameraFraming, radiusForHeight, defaultCameraFraming, framingBoundsFromAvatar } from "./cameraFraming";
+export type { CameraFraming } from "./cameraFraming";
+export { regionLayoutFromBounds, defaultRegionLayout } from "./regionLayout";

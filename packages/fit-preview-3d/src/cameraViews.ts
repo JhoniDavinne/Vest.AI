@@ -25,15 +25,24 @@ export interface SphericalPose {
   theta: number;
 }
 
-export function clampDistance(distance: number): number {
-  if (!Number.isFinite(distance)) return CAMERA_MAX_DISTANCE;
-  return Math.min(CAMERA_MAX_DISTANCE, Math.max(CAMERA_MIN_DISTANCE, distance));
+export function clampDistance(
+  distance: number,
+  min: number = CAMERA_MIN_DISTANCE,
+  max: number = CAMERA_MAX_DISTANCE,
+): number {
+  if (!Number.isFinite(distance)) return max;
+  return Math.min(max, Math.max(min, distance));
 }
 
 /** Nova distancia apos um passo de zoom (+1 aproxima, -1 afasta). */
-export function stepDistance(current: number, direction: 1 | -1): number {
+export function stepDistance(
+  current: number,
+  direction: 1 | -1,
+  min: number = CAMERA_MIN_DISTANCE,
+  max: number = CAMERA_MAX_DISTANCE,
+): number {
   const factor = direction === 1 ? ZOOM_STEP : 1 / ZOOM_STEP;
-  return clampDistance(current * factor);
+  return clampDistance(current * factor, min, max);
 }
 
 /** Pose esferica inicial derivada da posicao padrao e do alvo. */
@@ -50,12 +59,15 @@ export function defaultSphericalPose(): SphericalPose {
 }
 
 /** Converte pose esferica em posicao cartesiana relativa ao alvo. */
-export function sphericalToPosition(pose: SphericalPose): [number, number, number] {
+export function sphericalToPosition(
+  pose: SphericalPose,
+  target: readonly [number, number, number] = CAMERA_TARGET,
+): [number, number, number] {
   const sinPhiRadius = Math.sin(pose.phi) * pose.radius;
   return [
-    CAMERA_TARGET[0] + sinPhiRadius * Math.sin(pose.theta),
-    CAMERA_TARGET[1] + Math.cos(pose.phi) * pose.radius,
-    CAMERA_TARGET[2] + sinPhiRadius * Math.cos(pose.theta),
+    target[0] + sinPhiRadius * Math.sin(pose.theta),
+    target[1] + Math.cos(pose.phi) * pose.radius,
+    target[2] + sinPhiRadius * Math.cos(pose.theta),
   ];
 }
 

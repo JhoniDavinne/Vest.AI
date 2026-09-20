@@ -2,77 +2,104 @@
 
 import * as React from "react";
 import { useGLTF } from "@react-three/drei";
-import { Group, type Object3D } from "three";
+import { Group, MeshStandardMaterial, Vector3, type Object3D } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import {
-  applyMorphState,
-  computeAvatarMorphState,
-  mergeMorphMapping,
-  type AvatarMorphState,
-  type MorphAxis,
-  type MorphTargetMapping,
-} from "./avatarMorph";
-import { forEachMesh, hasMorphTargets, measureObject, metricCorrectionFactor, placeMetricObject } from "./modelUtils";
+  applyAvatarDeformation,
+  detectAdapterKind,
+} from "./avatarAdapters";
+import type { AdapterKind, AvatarDeformationProfile } from "./avatarDeformation";
+import type { MorphAxis, MorphTargetMapping } from "./avatarMorph";
+import {
+  disposeMaterials,
+  forEachMesh,
+  measureObject,
+  metricCorrectionFactor,
+  placeMetricObject,
+  orientTPoseToCamera,
+} from "./modelUtils";
 import type { BodyScaleFactors } from "./types";
+
+const SKIN_COLOR = "#c4a07a";
 
 export interface AvatarModel {
   /** Instancia propria (clonada do cache do useGLTF) pronta para a cena. */
   object: Object3D;
-  /** Estado morph calculado a partir dos fatores corporais. */
-  morphState: AvatarMorphState;
-  /** Eixos efetivamente aplicados via morph targets. */
+  /** Eixos efetivamente aplicados via morph targets (vazio no adapter de ossos). */
   appliedAxes: MorphAxis[];
-  /** `true` quando o GLB nao possui morph targets (avatar rigido). */
+  /** Adapter escolhido automaticamente para este GLB. */
+  adapter: AdapterKind;
+  /** `true` quando nao ha morph targets. */
   rigid: boolean;
 }
 
 /**
  * Carrega o avatar GLB (suspende via `useGLTF`), clona a cena cacheada,
- * aplica escala metrica e escreve os morph targets a partir de `factors`.
+ * aplica escala metrica e deforma via morph / skeleton / regional.
  *
  * O mesmo GLB nunca e baixado duas vezes: `useGLTF` mantem cache global por URL.
- * O clone evita que duas instancias na pagina (ex.: catalogo + resultado)
- * compartilhem `morphTargetInfluences`.
+ * O clone evita mutar o cache e compartilhar morphTargetInfluences / bone scales.
  */
 export function useAvatarModel(
   url: string,
   factors: BodyScaleFactors,
+  profile: AvatarDeformationProfile,
   morphMapping?: Partial<MorphTargetMapping> | null,
 ): AvatarModel {
   const gltf = useGLTF(url);
+  const restScales = React.useRef(new Map<Object3D, Vector3>());
+  const ownedMaterials = React.useRef<MeshStandardMaterial[]>([]);
 
   const object = React.useMemo(() => {
+    restScales.current = new Map();
+    disposeMaterials(ownedMaterials.current);
+    ownedMaterials.current = [];
+
     const instance = cloneSkeleton(gltf.scene) as Group;
     const bounds = measureObject(instance);
     const correction = metricCorrectionFactor(bounds.height);
     if (correction !== 1) instance.scale.multiplyScalar(correction);
-    // Garante pes na origem antes da conversao metrica.
+    instance.updateMatrixWorld(true);
     const measured = measureObject(instance);
     instance.position.y -= measured.minY;
     instance.updateMatrixWorld(true);
+    orientTPoseToCamera(instance);
 
     const root = placeMetricObject(new Group());
     root.add(instance);
     forEachMesh(instance, (mesh) => {
       mesh.castShadow = false;
       mesh.receiveShadow = false;
+      const material = new MeshStandardMaterial({
+        color: SKIN_COLOR,
+        roughness: 0.72,
+        metalness: 0.02,
+      });
+      mesh.material = material;
+      ownedMaterials.current.push(material);
     });
     return root;
   }, [gltf.scene]);
 
-  const mapping = React.useMemo(() => mergeMorphMapping(morphMapping), [morphMapping]);
-  const morphState = React.useMemo(() => computeAvatarMorphState(factors), [factors]);
+  const adapter = React.useMemo(() => detectAdapterKind(object), [object]);
 
   const appliedAxes = React.useMemo(() => {
-    const applied = new Set<MorphAxis>();
-    forEachMesh(object, (mesh) => {
-      const result = applyMorphState(mesh, morphState, mapping);
-      result.applied.forEach((axis) => applied.add(axis));
-    });
-    return Array.from(applied);
-  }, [object, morphState, mapping]);
+    const result = applyAvatarDeformation(object, adapter, profile, factors, restScales.current, morphMapping);
+    object.updateMatrixWorld(true);
+    return result.appliedAxes;
+  }, [object, adapter, profile, factors, morphMapping]);
 
-  const rigid = React.useMemo(() => !hasMorphTargets(object), [object]);
+  React.useEffect(
+    () => () => {
+      disposeMaterials(ownedMaterials.current);
+      ownedMaterials.current = [];
+    },
+    [object],
+  );
 
-  return { object, morphState, appliedAxes, rigid };
+  return { object, appliedAxes, adapter, rigid: adapter !== "morph" };
+}
+
+export function preloadAvatarModel(url: string): void {
+  useGLTF.preload(url);
 }

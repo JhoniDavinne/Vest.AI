@@ -1,39 +1,45 @@
 {
   "version": 2,
   "avatar": {
-    "url": "body/base-male.glb",
-    "placeholder": true,
-    "morphTargets": {
-      "height": {
-        "plus": "height_plus",
-        "minus": "height_minus"
-      },
-      "chest": {
-        "plus": "chest_plus",
-        "minus": "chest_minus"
-      },
-      "waist": {
-        "plus": "waist_plus",
-        "minus": "waist_minus"
-      },
-      "hip": {
-        "plus": "hip_plus",
-        "minus": "hip_minus"
-      },
-      "shoulder": {
-        "plus": "shoulder_plus",
-        "minus": "shoulder_minus"
-      },
-      "torsoLeg": {
-        "plus": "torso_plus",
-        "minus": "torso_minus"
+    "url": "avatar/avatar_base.glb",
+    "placeholder": false,
+    "type": "human",
+    "baseMeasurements": {
+      "height": 175,
+      "chest": 96,
+      "waist": 82,
+      "hips": 98,
+      "shoulders": 44,
+      "weight": 72
+    }
+  },
+  "avatars": {
+    "default": {
+      "url": "avatar/avatar_base.glb",
+      "placeholder": false,
+      "type": "human",
+      "baseMeasurements": {
+        "height": 175,
+        "chest": 96,
+        "waist": 82,
+        "hips": 98,
+        "shoulders": 44,
+        "weight": 72
       }
     }
   },
   "garments": {
     "tshirt": {
-      "url": "garments/tshirt.glb",
-      "placeholder": true
+      "url": "garments/tshirt_basic.glb",
+      "placeholder": false,
+      "type": "tshirt",
+      "baseSize": "M",
+      "baseMeasurements": {
+        "chest": 111,
+        "waist": 111,
+        "length": 71,
+        "shoulder": 45
+      }
     },
     "shirt": {
       "url": "garments/shirt.glb",
@@ -71,5 +77,5 @@
     "Shoulder",
     "Length"
   ],
-  "note": "Assets placeholder (cubos low-poly). Enquanto placeholder=true a cena usa a silhueta estilizada. Substitua por GLB em escala metrica (metros, Y para cima, pes em y=0) e marque placeholder=false."
+  "note": "Avatar humano GLB CC0 em avatar/avatar_base.glb. Camiseta 3D original CC0 em garments/tshirt_basic.glb. Demais categorias continuam placeholder (GarmentPrimitive). Ver apps/web/public/models/garments/ATTRIBUTION.md."
 }

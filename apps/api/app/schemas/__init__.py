@@ -205,6 +205,7 @@ class FitPreviewBodyPayload(BaseModel):
     waist: float | None = None
     hip: float | None = None
     shoulder: float | None = None
+    weight: float | None = None  # apenas deformacao visual do avatar; nao altera o score
     photoRatios: dict[str, float | None] | None = None
 
 

@@ -57,6 +57,69 @@ describe("normalizeManifest", () => {
     expect(normalizeManifest({ regions: [] })).toBeNull();
     expect(normalizeManifest({ version: 2, avatar: { url: "" }, garments: {} })).toBeNull();
   });
+
+  it("aceita avatars.default e baseMeasurements sem quebrar o schema v2", () => {
+    const manifest = normalizeManifest({
+      version: 2,
+      avatars: {
+        default: {
+          url: "avatar/avatar_base.glb",
+          placeholder: false,
+          type: "human",
+          baseMeasurements: { height: 175, chest: 96, waist: 82, hips: 98, shoulders: 44, weight: 72 },
+        },
+      },
+      garments: { tshirt: { url: "garments/tshirt.glb", placeholder: true } },
+    });
+    expect(manifest?.avatar?.url).toBe("avatar/avatar_base.glb");
+    expect(manifest?.avatar?.placeholder).toBe(false);
+    expect(manifest?.avatar?.type).toBe("human");
+    expect(manifest?.avatar?.baseMeasurements).toEqual({
+      height: 175,
+      chest: 96,
+      waist: 82,
+      hips: 98,
+      shoulders: 44,
+      weight: 72,
+    });
+    expect(isRenderableAsset(resolveAvatarAsset(manifest, "/models"))).toBe(true);
+  });
+
+  it("cai para silhueta quando o avatar esta ausente ou e placeholder", () => {
+    expect(isRenderableAsset(resolveAvatarAsset(null, "/models"))).toBe(false);
+    const placeholder = normalizeManifest({
+      version: 2,
+      avatar: { url: "body/base-male.glb", placeholder: true },
+      garments: {},
+    });
+    expect(isRenderableAsset(resolveAvatarAsset(placeholder, "/models"))).toBe(false);
+    expect(isRenderableAsset(resolveAvatarAsset(placeholder, "/models"), true)).toBe(true);
+  });
+
+  it("aceita garment real com type, baseSize e baseMeasurements", () => {
+    const manifest = normalizeManifest({
+      version: 2,
+      avatar: { url: "avatar/avatar_base.glb", placeholder: false },
+      garments: {
+        tshirt: {
+          url: "garments/tshirt_basic.glb",
+          placeholder: false,
+          type: "tshirt",
+          baseSize: "M",
+          baseMeasurements: { chest: 111, waist: 111, length: 71 },
+        },
+        pants: { url: "garments/pants.glb", placeholder: true },
+      },
+    });
+    expect(manifest?.garments.tshirt?.url).toBe("garments/tshirt_basic.glb");
+    expect(manifest?.garments.tshirt?.placeholder).toBe(false);
+    expect(manifest?.garments.tshirt?.type).toBe("tshirt");
+    expect(manifest?.garments.tshirt?.baseSize).toBe("M");
+    expect(manifest?.garments.tshirt?.baseMeasurements?.chest).toBe(111);
+    expect(isRenderableAsset(resolveGarmentAsset(manifest, "tshirt", "/models"))).toBe(true);
+    expect(isRenderableAsset(resolveGarmentAsset(manifest, "pants", "/models"))).toBe(false);
+    expect(resolveGarmentAsset(manifest, "dress", "/models")).toBeNull();
+  });
 });
 
 describe("resolucao de assets", () => {

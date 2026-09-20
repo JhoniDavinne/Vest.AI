@@ -12,6 +12,7 @@
  */
 import type { Category } from "@veste-ai/contracts";
 import type { MorphTargetMapping } from "./avatarMorph";
+import type { AvatarBaseMeasurements } from "./avatarDeformation";
 
 export interface ManifestAsset {
   /** URL relativa ao `modelsBaseUrl` (ex.: `body/base.glb`). */
@@ -20,15 +21,36 @@ export interface ManifestAsset {
   placeholder: boolean;
 }
 
+export interface GarmentBaseMeasurements {
+  chest?: number;
+  waist?: number;
+  length?: number;
+  shoulder?: number;
+  hip?: number;
+}
+
+export interface GarmentManifestAsset extends ManifestAsset {
+  /** Categoria visual (`tshirt`, etc.) ou `placeholder`. */
+  type?: Category | "placeholder";
+  /** Tamanho de referencia do GLB (ex.: `M`). */
+  baseSize?: string;
+  /** Medidas da peca-base do GLB (cm). Transformacao visual e relativa a este perfil. */
+  baseMeasurements?: GarmentBaseMeasurements;
+}
+
 export interface AvatarManifestAsset extends ManifestAsset {
   /** Nomes dos morph targets do GLB por eixo corporal (opcional). */
   morphTargets?: Partial<MorphTargetMapping>;
+  /** `human` = avatar antropomorfo; omitido nos placeholders. */
+  type?: "human" | "placeholder";
+  /** Medidas do corpo-base do GLB (cm). Deformacao visual e relativa a este perfil. */
+  baseMeasurements?: AvatarBaseMeasurements;
 }
 
 export interface ModelsManifest {
   version: 2;
   avatar: AvatarManifestAsset | null;
-  garments: Partial<Record<Category, ManifestAsset>>;
+  garments: Partial<Record<Category, GarmentManifestAsset>>;
   regions: string[];
   note: string;
 }
@@ -66,6 +88,52 @@ function asAsset(value: unknown, defaultPlaceholder: boolean): ManifestAsset | n
   return null;
 }
 
+function asBaseMeasurements(value: unknown): AvatarBaseMeasurements | undefined {
+  if (!isRecord(value)) return undefined;
+  const num = (key: string, alt?: string): number | undefined => {
+    const raw = value[key] ?? (alt ? value[alt] : undefined);
+    return typeof raw === "number" && Number.isFinite(raw) && raw > 0 ? raw : undefined;
+  };
+  const height = num("height");
+  const chest = num("chest");
+  const waist = num("waist");
+  const hips = num("hips", "hip");
+  const shoulders = num("shoulders", "shoulder");
+  if (!height || !chest || !waist || !hips || !shoulders) return undefined;
+  const weight = num("weight");
+  return { height, chest, waist, hips, shoulders, ...(weight ? { weight } : {}) };
+}
+
+function asGarmentMeasurements(value: unknown): GarmentBaseMeasurements | undefined {
+  if (!isRecord(value)) return undefined;
+  const num = (key: string, alt?: string): number | undefined => {
+    const raw = value[key] ?? (alt ? value[alt] : undefined);
+    return typeof raw === "number" && Number.isFinite(raw) && raw > 0 ? raw : undefined;
+  };
+  const out: GarmentBaseMeasurements = {
+    chest: num("chest"),
+    waist: num("waist"),
+    length: num("length"),
+    shoulder: num("shoulder", "shoulders"),
+    hip: num("hip", "hips"),
+  };
+  return Object.values(out).some((v) => v != null) ? out : undefined;
+}
+
+function asGarmentAsset(value: unknown, defaultPlaceholder: boolean): GarmentManifestAsset | null {
+  const base = asAsset(value, defaultPlaceholder);
+  if (!base) return null;
+  if (!isRecord(value)) return base;
+  const type = value.type;
+  const knownType = typeof type === "string" && (CATEGORIES as readonly string[]).includes(type) ? (type as Category) : undefined;
+  return {
+    ...base,
+    type: type === "placeholder" ? "placeholder" : knownType,
+    baseSize: typeof value.baseSize === "string" && value.baseSize.trim() ? value.baseSize.trim() : undefined,
+    baseMeasurements: asGarmentMeasurements(value.baseMeasurements),
+  };
+}
+
 function asMorphMapping(value: unknown): Partial<MorphTargetMapping> | undefined {
   if (!isRecord(value)) return undefined;
   const out: Partial<MorphTargetMapping> = {};
@@ -93,23 +161,27 @@ function asMorphMapping(value: unknown): Partial<MorphTargetMapping> | undefined
 export function normalizeManifest(raw: unknown): ModelsManifest | null {
   if (!isRecord(raw)) return null;
 
-  const isV2 = raw.version === 2 || isRecord(raw.avatar);
+  const isV2 = raw.version === 2 || isRecord(raw.avatar) || isRecord(raw.avatars);
   const legacyDefault = !isV2;
 
   let avatar: AvatarManifestAsset | null = null;
-  const avatarSource = isV2 ? raw.avatar : raw.body;
+  const nestedDefault = isRecord(raw.avatars) ? raw.avatars.default : undefined;
+  const avatarSource = isV2 ? (raw.avatar ?? nestedDefault) : raw.body;
   const avatarAsset = asAsset(avatarSource, legacyDefault);
   if (avatarAsset) {
+    const sourceRecord = isRecord(avatarSource) ? avatarSource : null;
     avatar = {
       ...avatarAsset,
-      morphTargets: isRecord(avatarSource) ? asMorphMapping(avatarSource.morphTargets) : undefined,
+      morphTargets: sourceRecord ? asMorphMapping(sourceRecord.morphTargets) : undefined,
+      type: sourceRecord?.type === "human" || sourceRecord?.type === "placeholder" ? sourceRecord.type : undefined,
+      baseMeasurements: sourceRecord ? asBaseMeasurements(sourceRecord.baseMeasurements) : undefined,
     };
   }
 
-  const garments: Partial<Record<Category, ManifestAsset>> = {};
+  const garments: Partial<Record<Category, GarmentManifestAsset>> = {};
   if (isRecord(raw.garments)) {
     for (const category of CATEGORIES) {
-      const asset = asAsset(raw.garments[category], legacyDefault);
+      const asset = asGarmentAsset(raw.garments[category], legacyDefault);
       if (asset) garments[category] = asset;
     }
   }

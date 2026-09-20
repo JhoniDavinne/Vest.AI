@@ -23,6 +23,7 @@
     "pipeline:examples:live": "python pipelines/examples/run_examples.py --live --assert",
     "pipeline:test": "python pipelines/tests/run_all.py",
     "models:3d": "python scripts/generate_3d_models.py",
+    "models:tshirt": "python scripts/generate_tshirt_glb.py",
     "docker:up": "docker compose -f docker/docker-compose.yml up --build",
     "docker:up:gpu": "docker compose -f docker/docker-compose.yml --env-file docker/gpu.env up --build",
     "docker:build": "docker compose -f docker/docker-compose.yml build",

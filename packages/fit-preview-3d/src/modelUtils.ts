@@ -10,7 +10,7 @@
  * Estas funcoes convertem metros para essas unidades, mantendo camera,
  * OrbitControls e overlays regionais inalterados.
  */
-import { Box3, Material, Mesh, Object3D, Vector3 } from "three";
+import { Box3, Material, Mesh, MeshStandardMaterial, Object3D, Vector3 } from "three";
 import { REFERENCE_BODY } from "./constants";
 import { SILHOUETTE_CENTER_Y, SILHOUETTE_HEIGHT } from "./silhouette";
 
@@ -44,6 +44,8 @@ export function placeMetricObject(object: Object3D): Object3D {
 
 export interface ObjectBounds {
   height: number;
+  width: number;
+  depth: number;
   minY: number;
   center: Vector3;
 }
@@ -54,7 +56,27 @@ export function measureObject(object: Object3D): ObjectBounds {
   const center = new Vector3();
   box.getSize(size);
   box.getCenter(center);
-  return { height: size.y, minY: box.min.y, center };
+  return { height: size.y, width: size.x, depth: size.z, minY: box.min.y, center };
+}
+
+/**
+ * Orienta um humanoide em T-pose para a camera em +Z.
+ *
+ * `avatar_base.glb` tem bracos ao longo de Z (profundidade ~1.17 m) e peito em +X
+ * (~0.28 m). Sem esta rotacao a camera olha pelo eixo dos bracos e o corpo
+ * aparece como uma silhueta estreita. Apos -90° em Y: bracos em X, frente em +Z.
+ */
+export function orientTPoseToCamera(object: Object3D): void {
+  object.updateMatrixWorld(true);
+  const before = measureObject(object);
+  if (before.depth > before.width * 1.2) {
+    object.rotation.y -= Math.PI / 2;
+    object.updateMatrixWorld(true);
+  }
+  const after = measureObject(object);
+  object.position.x -= after.center.x;
+  object.position.z -= after.center.z;
+  object.updateMatrixWorld(true);
 }
 
 /**
@@ -84,6 +106,12 @@ export function disposeMaterials(materials: Iterable<Material>): void {
   }
 }
 
+/** Retorna `true` se o material tem textura de albedo (PBR valido). */
+export function hasAlbedoMap(material: Material | Material[]): boolean {
+  const list = Array.isArray(material) ? material : [material];
+  return list.some((item) => Boolean((item as MeshStandardMaterial).map));
+}
+
 /** Retorna `true` se algum mesh do objeto possui morph targets. */
 export function hasMorphTargets(object: Object3D): boolean {
   let found = false;
@@ -91,4 +119,9 @@ export function hasMorphTargets(object: Object3D): boolean {
     if (mesh.morphTargetDictionary && Object.keys(mesh.morphTargetDictionary).length > 0) found = true;
   });
   return found;
+}
+
+/** Helpers de bounding box/eixos apenas em `next dev` / vitest development. */
+export function isSceneDebugEnabled(): boolean {
+  return process.env.NODE_ENV === "development";
 }

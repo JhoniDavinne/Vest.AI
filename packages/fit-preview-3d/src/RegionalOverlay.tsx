@@ -7,13 +7,14 @@ import type { FitRegionVisual } from "./fitVisualization";
 import { buildRegions } from "./fitVisualization";
 import { fitDirection, regionIntensity } from "./regionLegend";
 import { STATUS_COLOR_HEX } from "./constants";
-import { REGION_BAND_RADIUS, REGION_BAND_Y } from "./silhouette";
+import { defaultRegionLayout, regionLayoutFromBounds } from "./regionLayout";
 import { computeBodyScale, regionRadiusScale } from "./scaleBody";
 
 interface RegionalOverlayProps {
   payload: FitPreviewPayload;
-  /** Regioes ja normalizadas (FitVisualizationState.regionList). Se ausente, usa payload.regions. */
   regions?: FitRegionVisual[];
+  /** Bounding box do avatar (GLB). Sem ela, usa as constantes da silhueta. */
+  bodyBounds?: { minY: number; height: number; width: number } | null;
 }
 
 /** Deslocamento radial maximo (unidades de cena) que indica direcao do desvio. */
@@ -31,16 +32,21 @@ const MAX_TUBE_EXTRA = 0.014;
  *                 (deviation > 0, mais folgado) — apenas direcao, sem escala fisica.
  * Nenhuma formula de caimento e aplicada aqui.
  */
-export function RegionalOverlay({ payload, regions }: RegionalOverlayProps) {
+export function RegionalOverlay({ payload, regions, bodyBounds }: RegionalOverlayProps) {
   const factors = React.useMemo(() => computeBodyScale(payload), [payload]);
   const list = React.useMemo(() => regions ?? buildRegions(payload.regions).regionList, [regions, payload.regions]);
+  const layout = React.useMemo(
+    () => (bodyBounds && bodyBounds.height > 0.2 ? regionLayoutFromBounds(bodyBounds) : defaultRegionLayout()),
+    [bodyBounds],
+  );
+  const scaleY = bodyBounds ? 1 : factors.height;
 
   return (
-    <group name="regional-overlay" scale={[1, factors.height, 1]}>
+    <group name="regional-overlay" scale={[1, scaleY, 1]}>
       {list.map((region) => {
         const key = region.region as RegionKey;
-        const y = REGION_BAND_Y[key];
-        const baseRadius = REGION_BAND_RADIUS[key];
+        const y = layout.y[key];
+        const baseRadius = layout.radius[key];
         if (y == null || baseRadius == null) return null;
 
         let factor = 1;
@@ -62,7 +68,7 @@ export function RegionalOverlay({ payload, regions }: RegionalOverlayProps) {
         const emissive = notEvaluated ? 0 : 0.05 + 0.45 * intensity;
 
         return (
-          <group key={region.region} name={`band-${region.region}`} position={[0, y, 0.16]}>
+          <group key={region.region} name={`band-${region.region}`} position={[0, y, 0.08]} renderOrder={3}>
             <mesh rotation={[Math.PI / 2, 0, 0]} name={`band-${region.region}-ring`}>
               <torusGeometry args={[radius, tube, 8, 40]} />
               <meshStandardMaterial
@@ -72,13 +78,17 @@ export function RegionalOverlay({ payload, regions }: RegionalOverlayProps) {
                 emissive={color}
                 emissiveIntensity={emissive}
                 depthWrite={false}
+                depthTest
+                polygonOffset
+                polygonOffsetFactor={-2}
+                polygonOffsetUnits={-2}
               />
             </mesh>
             {!notEvaluated && direction !== "unknown" && direction !== "neutral" ? (
               // Segundo anel fino na posicao neutra: mostra "para onde" a peca desvia.
               <mesh rotation={[Math.PI / 2, 0, 0]} name={`band-${region.region}-reference`}>
                 <torusGeometry args={[bodyRadius, BASE_TUBE * 0.6, 6, 40]} />
-                <meshStandardMaterial color={color} transparent opacity={0.22} depthWrite={false} />
+                <meshStandardMaterial color={color} transparent opacity={0.22} depthWrite={false} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
               </mesh>
             ) : null}
           </group>

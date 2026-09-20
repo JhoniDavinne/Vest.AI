@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { FitPreview3DProps } from "./types";
-import { DEFAULT_MODELS_BASE, FIT_PREVIEW_DISCLAIMER } from "./constants";
+import { DEFAULT_MODELS_BASE, resolvePreviewDisclaimer, type PreviewRendererKind } from "./constants";
 import { AvatarScene } from "./AvatarScene";
 import { FitPreviewControls } from "./FitPreviewControls";
 import { FitLegend } from "./FitLegend";
@@ -72,6 +72,7 @@ export function FitPreview3D({
 
   const [cameraCommand, setCameraCommand] = React.useState<CameraCommand | null>(null);
   const [activeView, setActiveView] = React.useState<CameraView | null>("front");
+  const [previewRenderer, setPreviewRenderer] = React.useState<PreviewRendererKind>("silhouette");
   const commandId = React.useRef(0);
 
   const dispatch = React.useCallback((command: Omit<CameraCommand, "id">) => {
@@ -151,7 +152,11 @@ export function FitPreview3D({
     </div>
   ) : null;
 
-  const disclaimer = showDisclaimer ? <p className="vfp-disclaimer">{payload.disclaimer || FIT_PREVIEW_DISCLAIMER}</p> : null;
+  const disclaimer = showDisclaimer ? (
+    <p className="vfp-disclaimer" data-testid="fit-preview-disclaimer" data-renderer={previewRenderer}>
+      {resolvePreviewDisclaimer(previewRenderer)}
+    </p>
+  ) : null;
 
   const fallbackNode = fallback ?? (
     <div className="vfp-fallback" style={{ minHeight: Math.min(height, 240) }}>
@@ -173,10 +178,31 @@ export function FitPreview3D({
   }
 
   return (
-    <div className={rootClass} data-testid="fit-preview-3d" data-manifest-status={manifestStatus} data-size={effectiveFit.size}>
+    <div
+      className={rootClass}
+      data-preview-renderer={previewRenderer}
+      data-manifest-status={manifestStatus}
+      data-size={effectiveFit.size}
+      data-avatar-src={manifest?.avatar?.url ?? "silhouette"}
+      data-avatar-human={
+        manifest?.avatar && manifest.avatar.type === "human" && !manifest.avatar.placeholder ? "true" : "false"
+      }
+      data-garment-src={
+        manifest?.garments[effectivePayload.garment.category] &&
+        !manifest.garments[effectivePayload.garment.category]?.placeholder
+          ? (manifest.garments[effectivePayload.garment.category]?.url ?? "primitive")
+          : "primitive"
+      }
+    >
       <div className={compact ? "vfp-frame vfp-compact" : "vfp-frame"}>
         {summary}
-        <div className="vfp-stage" aria-busy={updating || undefined}>
+        <div className="vfp-stage" aria-busy={updating || manifestStatus === "loading" || undefined}>
+          {manifestStatus === "loading" ? (
+            <div className="vfp-updating" role="status" aria-live="polite">
+              <span className="vfp-spinner" aria-hidden="true" />
+              Carregando avatar 3D…
+            </div>
+          ) : null}
           {updating ? (
             <div className="vfp-updating" role="status" aria-live="polite">
               <span className="vfp-spinner" aria-hidden="true" />
@@ -194,6 +220,7 @@ export function FitPreview3D({
             onContextLost={handleContextLost}
             onContextRestored={handleContextRestored}
             onAssetError={onAssetError}
+            onRendererChange={setPreviewRenderer}
           />
         </div>
         {showControls ? (

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
 import {
   hasMorphTargets,
+  isSceneDebugEnabled,
   measureObject,
   metricCorrectionFactor,
   metricPlacement,
+  orientTPoseToCamera,
   placeMetricObject,
   REFERENCE_HEIGHT_M,
   SCENE_FLOOR_Y,
@@ -64,5 +66,28 @@ describe("hasMorphTargets", () => {
     const group = new Group();
     group.add(morphable);
     expect(hasMorphTargets(group)).toBe(true);
+  });
+});
+
+describe("orientTPoseToCamera", () => {
+  it("gira bracos no eixo Z para a largura X visivel pela camera", () => {
+    const root = new Group();
+    const body = new Mesh(new BoxGeometry(0.28, 1.9, 1.17), new MeshStandardMaterial());
+    body.position.y = 0.95;
+    root.add(body);
+    root.updateMatrixWorld(true);
+    const before = measureObject(root);
+    expect(before.depth).toBeGreaterThan(before.width);
+    orientTPoseToCamera(root);
+    const after = measureObject(root);
+    expect(after.width).toBeGreaterThan(after.depth);
+    expect(Math.abs(after.center.x)).toBeLessThan(0.02);
+    expect(Math.abs(after.center.z)).toBeLessThan(0.02);
+  });
+});
+
+describe("isSceneDebugEnabled", () => {
+  it("fica desligado fora de development (vitest usa NODE_ENV=test)", () => {
+    expect(isSceneDebugEnabled()).toBe(process.env.NODE_ENV === "development");
   });
 });
