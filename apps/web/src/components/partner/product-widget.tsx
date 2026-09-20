@@ -13,6 +13,7 @@ export function PartnerProductWidget({ productId, sku }: { productId: string; sk
       accentColor="#c9a46a"
       initialMeasurements={{ height: 180, chest: 102, waist: 88, hip: 100, shoulder: 45 }}
       label="Descubra seu tamanho ideal"
+      enable3D
     />
   );
 }

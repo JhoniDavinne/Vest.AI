@@ -4,7 +4,7 @@
 
 - Aplicativo mobile nativo
 - Marketplace ou rede social
-- Provador 3D hiper-realista
+- Provador 3D hiper-realista (simulação física de tecido, rosto fiel à foto)
 - Modelo de machine learning treinado em escala
 - Integração com dezenas de lojas reais
 - Pagamentos ou e-commerce completo
@@ -29,7 +29,7 @@ O objetivo é provar viabilidade técnica: dados + motor explicável + API + wid
 2. Calibrar o score por marca, categoria, modelagem e tecido.
 3. Trocar parte das regras por um modelo supervisionado — mantendo a explicação.
 4. Levar o widget a um e-commerce parceiro de verdade.
-5. Só então investir em representação visual da peça sobre o usuário, sem abandonar os dados técnicos.
+5. Evoluir assets 3D (arte Blender/CC0) e calibrar deformação regional — a v1 já entrega avatar rotacionável estimado com fallback 2D.
 
 ## Mensagem para fechar a banca
 

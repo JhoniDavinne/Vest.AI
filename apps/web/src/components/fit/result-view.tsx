@@ -19,6 +19,8 @@ import { SizeComparisonBars } from "./size-comparison";
 import { ComponentBreakdown, WeightsBar } from "./how-we-calculate";
 import { ConfidenceBadge } from "./confidence-badge";
 import { JsonViewer } from "./json-viewer";
+import { FitPreview3DLazy } from "./fit-preview-3d-lazy";
+import { buildPreviewPayloadFromRecommendation, mergeFitPreviewPayload } from "@veste-ai/fit-preview-3d";
 
 export function ResultView({ analysisId }: { analysisId: string }) {
   const { user } = useProfile();
@@ -40,6 +42,16 @@ export function ResultView({ analysisId }: { analysisId: string }) {
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Não foi possível carregar a análise."));
   }, [analysisId]);
+
+  const previewPayload = React.useMemo(() => {
+    if (!current || !product) return null;
+    const fallback = buildPreviewPayloadFromRecommendation(current, product, {
+      body: user?.measurements ?? undefined,
+      photo: user?.photo_analysis,
+      garmentMeasurements: product.sizes.find((s) => s.size_label === current.evaluated_size)?.measurements,
+    });
+    return mergeFitPreviewPayload(current, fallback);
+  }, [current, product, user]);
 
   async function evaluate(size: string) {
     if (!base || !current) return;
@@ -209,6 +221,20 @@ export function ResultView({ analysisId }: { analysisId: string }) {
           </p>
         </motion.div>
       </section>
+
+      {previewPayload ? (
+        <section className="space-y-4">
+          <div>
+            <p className="eyebrow">Provador visual 3D · tamanho {current.evaluated_size}</p>
+            <h2 className="mt-1 text-2xl font-medium">Avatar rotacionável com caimento regional</h2>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <FitPreview3DLazy payload={previewPayload} size="full" regionsFallback={current.regions} />
+            </motion.div>
+          </AnimatePresence>
+        </section>
+      ) : null}
 
       {/* REGIOES */}
       <section className="space-y-4">

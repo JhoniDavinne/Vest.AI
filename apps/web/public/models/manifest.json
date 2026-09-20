@@ -1,0 +1,21 @@
+{
+  "body": "body/base-male.glb",
+  "garments": {
+    "tshirt": "garments/tshirt.glb",
+    "shirt": "garments/shirt.glb",
+    "polo": "garments/polo.glb",
+    "hoodie": "garments/hoodie.glb",
+    "jacket": "garments/jacket.glb",
+    "dress": "garments/dress.glb",
+    "pants": "garments/pants.glb",
+    "shorts": "garments/shorts.glb"
+  },
+  "regions": [
+    "Chest",
+    "Waist",
+    "Hip",
+    "Shoulder",
+    "Length"
+  ],
+  "note": "Placeholders low-poly. Substitua por assets Blender em escala metrica (cm)."
+}

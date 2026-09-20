@@ -40,8 +40,13 @@ Nenhum cálculo de caimento vive no widget. Ele é um cliente HTTP.
 | `label` | Texto do botão |
 | `onSelectSize` | Callback da loja |
 | `onResult` | Callback com o JSON |
+| `enable3D` | Provador visual 3D lazy no resultado (padrão: `true`) |
 
 O canal do widget **não envia foto**. A análise visual fica no fluxo da aplicação VESTE.AI, com consentimento.
+
+O provador 3D é carregado sob demanda (`React.lazy`) para não inflar o bundle inicial do embed. Desative com `enable3D={false}` se a loja preferir só a grade 2D.
+
+Ver também: [12 — Provador visual 3D](12-provador-3d.md).
 
 ## Loja parceira (demonstração)
 

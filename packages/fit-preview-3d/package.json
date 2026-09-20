@@ -1,8 +1,8 @@
 {
-  "name": "@veste-ai/widget",
+  "name": "@veste-ai/fit-preview-3d",
   "version": "0.1.0",
   "private": true,
-  "description": "Widget incorporavel VESTE.AI - <VesteFit /> \"Descubra seu tamanho ideal\"",
+  "description": "Provador visual 3D VESTE.AI — avatar rotacionavel com caimento regional",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -10,7 +10,6 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/embed.ts --format esm,iife --dts --global-name VesteAI --out-dir dist",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },
@@ -19,15 +18,16 @@
     "react-dom": ">=18"
   },
   "dependencies": {
+    "@react-three/drei": "^10.0.6",
+    "@react-three/fiber": "^9.1.2",
     "@veste-ai/contracts": "*",
-    "@veste-ai/fit-preview-3d": "*"
+    "three": "^0.175.0"
   },
   "devDependencies": {
     "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/three": "^0.175.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tsup": "^8.5.0",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }

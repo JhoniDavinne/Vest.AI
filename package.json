@@ -22,6 +22,7 @@
     "pipeline:examples": "python pipelines/examples/run_examples.py --inprocess --assert",
     "pipeline:examples:live": "python pipelines/examples/run_examples.py --live --assert",
     "pipeline:test": "python pipelines/tests/run_all.py",
+    "models:3d": "python scripts/generate_3d_models.py",
     "docker:up": "docker compose -f docker/docker-compose.yml up --build",
     "docker:down": "docker compose -f docker/docker-compose.yml down -v"
   },

@@ -30,6 +30,7 @@ O front-end **não replica** o algoritmo. Toda recomendação passa por `POST /a
 - **Processamento:** NumPy, Pandas
 - **Visão:** MediaPipe/OpenCV opcionais — o fluxo principal funciona só com medidas
 - **Widget:** pacote `@veste-ai/widget`
+- **Provador 3D:** pacote `@veste-ai/fit-preview-3d` (React Three Fiber, lazy load)
 
 ---
 
@@ -118,10 +119,10 @@ npm run docker:down
 4. Abra o catálogo e escolha **Camiseta Essential Algodão**
 5. Clique em **Analisar caimento**
 6. Resultado esperado da demo: **M · ≈ 8,7/10 · confiança média** (sem foto)
-7. Compare com L — o score muda, o recomendado continua M
+7. **Gire o provador 3D** e compare S/M/L/XL — regiões coloridas refletem o motor
 8. Abra **Como calculamos**
 9. Entre em **Sou empresa** → tester da API, widget, métricas
-10. Abra a **Loja Parceira** e use o mesmo motor pelo widget
+10. Abra a **Loja Parceira** e use o mesmo motor (e provador 3D compact) pelo widget
 
 ---
 
@@ -169,8 +170,15 @@ npm run docker:down
     "shoulder": "good"
   },
   "explanation": "A modelagem apresenta boa compatibilidade com as medidas informadas.",
-  "recommendation": "O tamanho M apresenta o melhor equilíbrio entre as regiões analisadas."
+  "recommendation": "O tamanho M apresenta o melhor equilíbrio entre as regiões analisadas.",
+  "fit_preview": { "body": {}, "garment": {}, "regions": [], "disclaimer": "..." }
 }
+```
+
+Regenerar assets 3D placeholder:
+
+```bash
+npm run models:3d
 ```
 
 ---

@@ -191,6 +191,30 @@ class RegionDetail(BaseModel):
     note: str
 
 
+class FitPreviewBodyPayload(BaseModel):
+    height: float | None = None
+    chest: float | None = None
+    waist: float | None = None
+    hip: float | None = None
+    shoulder: float | None = None
+    photoRatios: dict[str, float | None] | None = None
+
+
+class FitPreviewGarmentPayload(BaseModel):
+    category: CategoryLiteral
+    color: str = ""
+    modeling: ModelingLiteral
+    evaluatedSize: str
+    measurements: GarmentMeasurementIn
+
+
+class FitPreviewPayload(BaseModel):
+    body: FitPreviewBodyPayload
+    garment: FitPreviewGarmentPayload
+    regions: list[RegionDetail]
+    disclaimer: str
+
+
 class SizeComparison(BaseModel):
     sku: str
     size: str
@@ -223,6 +247,7 @@ class RecommendationResponse(BaseModel):
     comparison: list[SizeComparison]
     visual_used: bool
     notes: list[str]
+    fit_preview: FitPreviewPayload | None = None
     created_at: datetime
 
 

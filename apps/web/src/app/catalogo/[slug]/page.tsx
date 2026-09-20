@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { SiteShell } from "@/components/site/shell";
 import { AnalyzeCta } from "@/components/catalog/analyze-cta";
+import { CatalogFitPreviewSection } from "@/components/catalog/catalog-fit-preview-section";
 import { SizeTable } from "@/components/catalog/size-table";
 import { Badge } from "@/components/ui/badge";
 
@@ -76,6 +77,8 @@ export default async function ProductPage({ params }: { params: Params }) {
           <div className="rounded-3xl border border-border bg-paper p-6 shadow-soft">
             <AnalyzeCta product={product} />
           </div>
+
+          <CatalogFitPreviewSection product={product} />
 
           <div className="grid gap-3 sm:grid-cols-2">
             {specs.map((s) => (

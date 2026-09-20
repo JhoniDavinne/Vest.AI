@@ -163,6 +163,34 @@ export interface RegionDetail {
   note: string;
 }
 
+export interface FitPreviewBodyPayload {
+  height: number | null;
+  chest: number | null;
+  waist: number | null;
+  hip: number | null;
+  shoulder: number | null;
+  photoRatios: {
+    shoulder_hip_ratio: number | null;
+    waist_hip_ratio: number | null;
+    torso_leg_ratio: number | null;
+  } | null;
+}
+
+export interface FitPreviewGarmentPayload {
+  category: Category;
+  color: string;
+  modeling: Modeling;
+  evaluatedSize: string;
+  measurements: GarmentMeasurement;
+}
+
+export interface FitPreviewPayload {
+  body: FitPreviewBodyPayload;
+  garment: FitPreviewGarmentPayload;
+  regions: RegionDetail[];
+  disclaimer: string;
+}
+
 export interface ComponentScores {
   measurements: number;
   modeling: number;
@@ -203,6 +231,7 @@ export interface RecommendationResponse {
   comparison: SizeComparison[];
   visual_used: boolean;
   notes: string[];
+  fit_preview?: FitPreviewPayload | null;
   created_at: string;
 }
 

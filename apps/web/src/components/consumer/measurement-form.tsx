@@ -221,27 +221,47 @@ export function MeasurementForm() {
 
 function BodyGuide() {
   const lines = [
-    { y: 92, label: "Ombros", color: "var(--ink)" },
-    { y: 128, label: "Peito", color: "var(--terracotta)" },
-    { y: 176, label: "Cintura", color: "var(--amber)" },
-    { y: 214, label: "Quadril", color: "var(--sage)" },
+    { y: 230, label: "Ombros", color: "var(--ink)" },
+    { y: 280, label: "Peito", color: "var(--terracotta)" },
+    { y: 363, label: "Cintura", color: "var(--amber)" },
+    { y: 516, label: "Quadril", color: "var(--sage)" },
   ];
+
   return (
-    <svg viewBox="0 0 240 320" className="mt-4 w-full">
-      <path
-        d="M120 20c14 0 24 11 24 26 0 10-4 18-10 23 24 6 40 20 46 42 3 12 4 26 4 40l-2 44c-1 26-6 52-14 78 4 12 2 24-2 36h-16c-4-14-6-28-6-42l-4-56c-2-24-6-48-8-72h-24c-2 24-6 48-8 72l-4 56c0 14-2 28-6 42H74c-4-12-6-24-2-36-8-26-13-52-14-78l-2-44c0-14 1-28 4-40 6-22 22-36 46-42-6-5-10-13-10-23 0-15 10-26 24-26Z"
-        fill="var(--ivory)"
-        stroke="var(--mist)"
-        strokeWidth="2"
-      />
-      {lines.map((l) => (
-        <g key={l.label}>
-          <line x1="52" x2="188" y1={l.y} y2={l.y} stroke={l.color} strokeWidth="2" strokeDasharray="4 4" />
-          <text x="196" y={l.y + 4} fontSize="11" fill="var(--stone)" fontFamily="var(--font-inter)">
+    <div className="relative mx-auto mt-2 flex h-[min(640px,68vh)] w-full justify-center gap-2" aria-hidden="true">
+      <div className="relative h-full w-[14.5rem] shrink-0">
+        <img
+          src="/images/body-silhouette.png"
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full object-contain object-center opacity-[0.38]"
+          style={{ mixBlendMode: "multiply" }}
+        />
+        <svg viewBox="0 0 352 1024" className="absolute inset-0 h-full w-full">
+          {lines.map((l) => (
+            <line
+              key={l.label}
+              x1="52"
+              x2="300"
+              y1={l.y}
+              y2={l.y}
+              stroke={l.color}
+              strokeWidth="3"
+              strokeDasharray="8 8"
+            />
+          ))}
+        </svg>
+      </div>
+      <div className="relative h-full w-12 shrink-0">
+        {lines.map((l) => (
+          <span
+            key={l.label}
+            className="absolute left-0 -translate-y-1/2 text-[13px] leading-none"
+            style={{ top: `${(l.y / 1024) * 100}%`, color: l.color }}
+          >
             {l.label}
-          </text>
-        </g>
-      ))}
-    </svg>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

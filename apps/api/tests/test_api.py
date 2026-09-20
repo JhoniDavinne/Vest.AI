@@ -63,6 +63,9 @@ def test_recommendation_demo_payload(client):
     assert {c["size"] for c in body["comparison"]} == {"S", "M", "L", "XL"}
     assert sum(1 for c in body["comparison"] if c["recommended"]) == 1
     assert set(body["regional_analysis"]) >= {"chest", "waist", "hip", "shoulder"}
+    assert body["fit_preview"]
+    assert body["fit_preview"]["garment"]["evaluatedSize"] == "M"
+    assert "disclaimer" in body["fit_preview"]
 
 
 def test_recommendation_other_size_changes_score(client):

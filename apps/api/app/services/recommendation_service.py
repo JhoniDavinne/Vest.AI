@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 from ..engine import BodyProfile, FitPreference, RecommendationEngine, RecommendationResult, VisualProportions
 from ..engine.messages import STATUS_PT
 from ..models import FitAnalysis, PhotoAnalysis, Product, SKUSize
-from ..schemas import RecommendationRequest, RecommendationResponse, RegionDetail, SizeComparison
+from ..schemas import RecommendationRequest, RecommendationResponse, RegionDetail, SizeComparison, FitPreviewPayload
 from .errors import NotFoundError, ValidationError
+from .fit_preview_mapper import build_fit_preview
 from .mappers import measurements_to_body, photo_to_visual, product_to_spec
 from .product_service import get_product, get_sku
 from .user_service import get_user, latest_measurement, latest_photo
@@ -97,7 +98,7 @@ def run_recommendation(
             channel=payload.channel,
         )
 
-    return build_response(product, sku, result, analysis)
+    return build_response(product, sku, result, analysis, body=body, visual=visual)
 
 
 def persist_analysis(
@@ -154,7 +155,13 @@ def persist_analysis(
 
 
 def build_response(
-    product: Product, sku: SKUSize, result: RecommendationResult, analysis: FitAnalysis | None
+    product: Product,
+    sku: SKUSize,
+    result: RecommendationResult,
+    analysis: FitAnalysis | None,
+    *,
+    body: BodyProfile | None = None,
+    visual: VisualProportions | None = None,
 ) -> RecommendationResponse:
     regions = [
         RegionDetail(
@@ -182,6 +189,16 @@ def build_response(
         )
         for e in result.comparison
     ]
+    fit_preview: FitPreviewPayload | None = None
+    if body is not None:
+        fit_preview = build_fit_preview(
+            product=product,
+            sku=sku,
+            body=body,
+            result=result,
+            visual=visual,
+            regions=regions,
+        )
     return RecommendationResponse(
         analysis_id=analysis.id if analysis else None,
         product_id=product.id,
@@ -205,5 +222,6 @@ def build_response(
         comparison=comparison,
         visual_used=result.visual_used,
         notes=[n for n in result.notes if not n.startswith("scale:")],
+        fit_preview=fit_preview,
         created_at=analysis.created_at if analysis else datetime.now(timezone.utc),
     )

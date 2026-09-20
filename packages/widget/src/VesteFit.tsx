@@ -14,6 +14,7 @@ import {
   REGION_STATUS_LABEL,
 } from "@veste-ai/contracts";
 import { VesteClient } from "./client";
+import { WidgetFitPreview3D } from "./fit-preview-3d";
 import { ensureStyles } from "./styles";
 
 export interface VesteFitProps {
@@ -37,6 +38,8 @@ export interface VesteFitProps {
   onResult?: (result: RecommendationResponse) => void;
   /** Abre o modal ja no primeiro render (uso em demonstracoes). */
   defaultOpen?: boolean;
+  /** Carrega o provador visual 3D no passo de resultado (lazy). */
+  enable3D?: boolean;
 }
 
 type Step = "form" | "loading" | "result";
@@ -79,6 +82,7 @@ export function VesteFit({
   onSelectSize,
   onResult,
   defaultOpen = false,
+  enable3D = true,
 }: VesteFitProps) {
   const [open, setOpen] = React.useState(defaultOpen);
   const [step, setStep] = React.useState<Step>("form");
@@ -240,6 +244,7 @@ export function VesteFit({
                     onSelectSize?.(selectedSize ?? result.recommended_size, result);
                     close();
                   }}
+                  enable3D={enable3D}
                 />
               ) : null}
             </div>
@@ -257,9 +262,10 @@ interface ResultViewProps {
   onEvaluate: (size: string) => void;
   onBack: () => void;
   onConfirm: () => void;
+  enable3D?: boolean;
 }
 
-function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, onConfirm }: ResultViewProps) {
+function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, onConfirm, enable3D = true }: ResultViewProps) {
   const selected = result.comparison.find((c) => c.size === selectedSize) ?? result.comparison[0];
   const regionEntries = Object.entries(result.regional_analysis) as [RegionKey, RegionStatus][];
   return (
@@ -285,6 +291,8 @@ function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, on
           </div>
         </div>
       </div>
+
+      <WidgetFitPreview3D payload={result.fit_preview ?? null} enabled={enable3D} />
 
       <div className="vf-regions">
         {regionEntries.map(([region, status]) => (

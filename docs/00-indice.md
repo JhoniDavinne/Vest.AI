@@ -17,5 +17,6 @@ Cada arquivo também é gerado em PDF em `docs/pdf/` pelo comando `npm run docs:
 | 09 | [Como usar](09-como-usar.md) | Operação | Subir local ou Docker |
 | 10 | [Pipelines e testes](10-pipelines-e-testes.md) | QA | Rodar exemplos e regressão |
 | 11 | [Limitações e próximos passos](11-limitacoes-e-proximos-passos.md) | Banca | Deixar claro o recorte do MVP |
+| 12 | [Provador visual 3D](12-provador-3d.md) | Demo / banca | Avatar rotacionável e roteiro |
 
-Leitura mínima para a apresentação: 01 → 03 → 09 → 07.
+Leitura mínima para a apresentação: 01 → 03 → 09 → 07 → 12.
