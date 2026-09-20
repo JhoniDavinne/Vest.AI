@@ -192,7 +192,9 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 
 # CatVTON
 
-Ponto arquitetural futuro — **não implementar nesta etapa**.
+Ponto arquitetural futuro — **ETAPA 5 ADIADA** (ver `docs/implementation/ETAPA_05_CATVTON_LOCAL.md`). Motivo: implementação e validação local do CatVTON serão realizadas posteriormente para evitar consumo desnecessário de recursos durante esta fase. Nada instalado, baixado ou configurado.
+
+Plano já definido: serviço Python isolado (`apps/tryon/`, FastAPI, sem compartilhar ambiente com `apps/api`), GPU NVIDIA/CUDA, `GET /health`, `POST /try-on`, modelo carregado uma única vez, `MAX_CONCURRENT_JOBS=1`, tratamento de OOM, imagens efêmeras (nunca persistidas), sem alteração no `RecommendationEngine` e sem integração frontend nesta etapa.
 
 - CatVTON exige Python 3.9/3.10 + torch 2.4 + diffusers e GPU NVIDIA (~8 GB VRAM em bf16); incompatível com `apps/api` (Python ≥ 3.11). Deve ser um **serviço separado**: `apps/tryon/` (FastAPI mínimo), com `Dockerfile` CUDA próprio e perfil opcional no `docker/docker-compose.yml`.
 - Integração na API principal: `apps/api/app/api/v1/routes/tryon.py` + `apps/api/app/services/tryon_service.py` — `POST /api/v1/tryon` (foto + `analysis_id` + consentimento VTO explícito) → job assíncrono → `GET /api/v1/tryon/{job_id}`. Persistir apenas metadados (`TryOnJob`), nunca a imagem da pessoa, mantendo a política atual de `apps/api/app/services/photo_service.py`.
@@ -241,7 +243,7 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - [ ] Garment3D — **infraestrutura concluída (Etapa 2)**: `useGarmentModel`, `garmentVisual.ts` (cor/tecido/elasticidade/modelagem/medidas), `GarmentPrimitive` como fallback. **PENDENTE: asset 3D real** (8 GLBs por categoria)
 - [x] Integração com motor de caimento — **concluída (Etapa 3)**: `SizeComparison.regions` propagado do motor, `FitVisualizationState` (`fitVisualization.ts`), overlay por `status/deviation/score`, `SizeSelector3D` + `FitLegend`, troca de tamanho sem HTTP e `recommendedSize × selectedPreviewSize` em `result-view.tsx`. Ver `docs/implementation/ETAPA_03_FIT_INTEGRATION.md`
 - [x] UX do provador — **concluída (Etapa 4)**: layout desktop 2 colunas / mobile ordenado, recomendado × visualizado explícito, seletor acessível (teclado, focus-visible, loading/disabled), controles Frente/Lateral/Costas/±/Reset, legenda de vestibilidade, estados loading/erro/fallback padronizados, `GET /recommendations/{id}?size=` para consistência de dados. Ver `docs/implementation/ETAPA_04_UX_PROVADOR.md`
-- [ ] CatVTON local — serviço isolado `apps/tryon/` com GPU, pesos locais, feature flag
-- [ ] Integração CatVTON — `routes/tryon.py`, `tryon_service.py`, `TryOnJob`, `flat_image_url`, seção em `result-view.tsx`
+- [ ] CatVTON local — **ADIADA (Etapa 5)**: serviço isolado `apps/tryon/` (FastAPI, GPU NVIDIA/CUDA, `GET /health`, `POST /try-on`, modelo único, `MAX_CONCURRENT_JOBS=1`, OOM, imagens efêmeras). Plano em `docs/implementation/ETAPA_05_CATVTON_LOCAL.md`
+- [ ] Integração CatVTON — não iniciada (depende da Etapa 5): `routes/tryon.py`, `tryon_service.py`, `TryOnJob`, `flat_image_url`, seção em `result-view.tsx`
 - [ ] Docker — corrigir `Dockerfile.web`, `transpilePackages`, perfil GPU no compose, CI completa
 - [ ] Testes finais — unitários do pacote 3D, `test_api.py` para novos schemas, E2E de fallback (WebGL off / GPU off / timeout)
