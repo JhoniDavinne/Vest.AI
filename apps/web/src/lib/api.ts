@@ -101,7 +101,9 @@ export const api = {
   // Motor
   recommend: (payload: RecommendationRequest, apiKey?: string) =>
     request<RecommendationResponse>("/recommendations", { method: "POST", body: JSON.stringify(payload) }, { apiKey }),
-  getRecommendation: (analysisId: string) => request<RecommendationResponse>(`/recommendations/${analysisId}`),
+  /** Recupera a analise; com `size`, avalia outro tamanho com as mesmas medidas persistidas (nao persiste). */
+  getRecommendation: (analysisId: string, size?: string) =>
+    request<RecommendationResponse>(`/recommendations/${analysisId}${size ? `?size=${encodeURIComponent(size)}` : ""}`),
   feedback: (payload: FeedbackCreate) => request<Feedback>("/feedback", { method: "POST", body: JSON.stringify(payload) }),
   engineConfig: () => request<EngineConfigResponse>("/engine/config"),
 

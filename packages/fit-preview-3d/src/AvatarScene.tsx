@@ -14,6 +14,12 @@ import { DEFAULT_MODELS_BASE } from "./constants";
 import { CAMERA_DEFAULT_POSITION, CAMERA_MAX_DISTANCE, CAMERA_MIN_DISTANCE, CAMERA_TARGET } from "./cameraViews";
 import { WebGLContextGuard } from "./WebGLContextGuard";
 
+/**
+ * Fundo da cena: tom --mist levemente mais escuro que a silhueta (#ede6dc) para
+ * garantir contraste do avatar estilizado e dos aneis sobre o palco.
+ */
+export const SCENE_BACKGROUND = "#e3dcd2";
+
 interface AvatarSceneProps {
   payload: FitPreviewPayload;
   /** Regioes normalizadas do motor para o overlay (padrao: payload.regions). */
@@ -24,6 +30,7 @@ interface AvatarSceneProps {
   height: number;
   cameraCommand?: CameraCommand | null;
   onContextLost?: () => void;
+  onContextRestored?: () => void;
   onAssetError?: (error: Error) => void;
 }
 
@@ -35,6 +42,7 @@ function SceneContent({
   renderPlaceholders,
   cameraCommand,
   onContextLost,
+  onContextRestored,
   onAssetError,
 }: {
   payload: FitPreviewPayload;
@@ -44,12 +52,15 @@ function SceneContent({
   renderPlaceholders: boolean;
   cameraCommand: CameraCommand | null;
   onContextLost?: () => void;
+  onContextRestored?: () => void;
   onAssetError?: (error: Error) => void;
 }) {
   return (
     <>
-      {onContextLost ? <WebGLContextGuard onContextLost={onContextLost} /> : null}
+      {onContextLost ? <WebGLContextGuard onContextLost={onContextLost} onContextRestored={onContextRestored} /> : null}
       <CameraRig command={cameraCommand} />
+      {/* Com gl.alpha=false o clear color padrao e preto; alinhamos ao --ivory do design system. */}
+      <color attach="background" args={[SCENE_BACKGROUND]} />
       <ambientLight intensity={0.72} />
       <directionalLight position={[2.5, 5, 3.5]} intensity={0.85} />
       <directionalLight position={[-3, 2, -2]} intensity={0.25} />
@@ -93,6 +104,7 @@ export function AvatarScene({
   height,
   cameraCommand = null,
   onContextLost,
+  onContextRestored,
   onAssetError,
 }: AvatarSceneProps) {
   return (
@@ -126,6 +138,7 @@ export function AvatarScene({
         renderPlaceholders={renderPlaceholders}
         cameraCommand={cameraCommand}
         onContextLost={onContextLost}
+        onContextRestored={onContextRestored}
         onAssetError={onAssetError}
       />
     </Canvas>

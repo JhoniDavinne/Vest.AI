@@ -19,7 +19,7 @@ export function StatusDot({ status, className }: { status: RegionStatus; classNa
 
 export function RegionGrid({ regions, compact = false }: { regions: RegionDetail[]; compact?: boolean }) {
   return (
-    <div className={cn("grid gap-3", compact ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 md:grid-cols-5")}>
+    <div className={cn("grid gap-3", compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 md:grid-cols-5")}>
       {regions.map((region, index) => (
         <Tooltip key={region.region}>
           <TooltipTrigger asChild>

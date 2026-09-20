@@ -96,7 +96,7 @@ Observação (Etapa 3): `RecommendationResult.comparison` contém `SizeEvaluatio
 
 ## API client utilizado
 
-- `apps/web/src/lib/api.ts` — objeto `api` (`recommend`, `getRecommendation`, `getProduct`, `getSizes`, `uploadPhoto`, …), `ApiError`, `apiBaseUrl()`; `fetch` com `cache: "no-store"`; headers `X-API-Key` opcional.
+- `apps/web/src/lib/api.ts` — objeto `api` (`recommend`, `getRecommendation(id, size?)`, `getProduct`, `getSizes`, `uploadPhoto`, …), `ApiError`, `apiBaseUrl()`; `fetch` com `cache: "no-store"`; headers `X-API-Key` opcional.
 - Widget: `packages/widget/src/client.ts` (`VesteClient`).
 - Tipos: `packages/contracts/src/index.ts`.
 
@@ -134,6 +134,7 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 - `GarmentMesh.tsx`: GLB por categoria → `useGarmentModel.ts` + `garmentVisual.ts` (cor, tecido, elasticidade, modelagem, medidas com escala limitada); senão `GarmentPrimitive.tsx` (caixas da v1).
 - `RegionalOverlay.tsx` (Etapa 3): anéis por região dirigidos por `status` (cor), `1 − score` (espessura/opacidade/emissão) e sinal de `deviation` (raio para dentro/fora); legenda textual em `FitLegend.tsx` via `regionLegend.ts`. Posições em `silhouette.ts` (`REGION_BAND_Y`).
 - Camada `FitVisualizationState` (`fitVisualization.ts`, Etapa 3): normaliza `RecommendationResponse`/`comparison[]` para o 3D; `SizeSelector3D.tsx` (HTML) troca de tamanho sem HTTP quando `comparison[].regions` existe. Detalhes em `docs/implementation/ETAPA_03_FIT_INTEGRATION.md`.
+- UX (Etapa 4): CSS `vfp-*` injetado (`styles.ts`) com hover/focus-visible/reduced-motion; layout canvas → controles → seletor → legenda; fundo do palco `#e3dcd2` via `<color attach="background">`; altura responsiva (`useResponsiveCanvasHeight`); tolerância a perda de contexto WebGL; `FitLegend` em variantes `inline`/`list`. Detalhes em `docs/implementation/ETAPA_04_UX_PROVADOR.md`.
 - Falhas de asset isoladas por `ModelErrorBoundary.tsx`; WebGL por `useFitPreview.ts` + `WebGLContextGuard.tsx`.
 - Controles: `FitPreviewControls.tsx` + `CameraRig.tsx` + `cameraViews.ts` (frente/lateral/costas, zoom, reset) sobre o `OrbitControls` existente; um único `Canvas`.
 - **GLBs em `apps/web/public/models/**` continuam sendo cubos placeholder** (`placeholder: true`) → a cena exibe silhueta + primitivas até que assets reais sejam fornecidos.
@@ -178,7 +179,8 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 **Web**
 - Feito (Etapa 2): `apps/web/next.config.ts` (`transpilePackages` + `@veste-ai/fit-preview-3d`); `apps/web/public/models/manifest.json` (v2); `scripts/generate_3d_models.py` (manifest v2).
 - Feito (Etapa 3): `apps/web/src/components/fit/result-view.tsx` (recommendedSize × selectedPreviewSize), `apps/web/src/components/catalog/product-fit-preview.tsx`, `apps/web/src/lib/fit-preview.ts` (+ teste).
-- Próximas etapas: `apps/web/src/components/fit/fit-preview-3d-lazy.tsx` (UX); substituir assets `apps/web/public/models/body/*.glb`, `apps/web/public/models/garments/*.glb` (PENDENTE: asset 3D real)
+- Feito (Etapa 4): `result-view.tsx` em duas colunas (desktop) / coluna única ordenada (mobile), `fit-preview-3d-lazy.tsx` ("Preparando provador…"), `region-grid.tsx` (compact 3 colunas), `apps/web/src/lib/api.ts` (`getRecommendation(id, size)`); API `GET /recommendations/{id}?size=` em `apps/api/app/api/v1/routes/recommendations.py`.
+- Próximas etapas: substituir assets `apps/web/public/models/body/*.glb`, `apps/web/public/models/garments/*.glb` (PENDENTE: asset 3D real)
 
 **Widget**
 - Modificar: `packages/widget/src/VesteFit.tsx` (`enable3D` default `false`), `packages/widget/src/fit-preview-3d.tsx`
@@ -222,7 +224,7 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - ~~`apps/web/next.config.ts` não inclui `@veste-ai/fit-preview-3d` em `transpilePackages`.~~ Corrigido na Etapa 2.
 - `npm run lint:web` falha com 8 erros `react-hooks/set-state-in-effect` pré-existentes em `apps/web/src/**` (ex.: `src/lib/profile.tsx`) — fora do escopo do 3D, mas bloqueia um gate de CI futuro.
 - `.github/workflows/ci.yml` não roda typecheck/lint/test do web nem testes do `fit-preview-3d`.
-- Widget (`packages/widget`) empacota three/R3F no IIFE e `enable3D` default `true` → bundle pesado para lojas parceiras.
+- ~~Widget (`packages/widget`) empacota three/R3F no IIFE e `enable3D` default `true`.~~ Etapa 4: `enable3D` padrão `false` (opt-in); o IIFE ainda inclui three/R3F por ser lazy no mesmo bundle — separar chunk fica para a etapa Docker/build.
 - Avatar com apenas 6 medidas corporais → morphs derivados por heurística; risco de representação enganosa. Manter clamps de `scaleBody.ts` e disclaimer.
 - Deformação da peça sem física pode sugerir caimento incorreto → mapear estritamente de `regions[].deviation/status` do motor.
 - ~~Comparar tamanhos no 3D com o contrato atual exige N chamadas a `POST /recommendations`.~~ Resolvido na Etapa 3 (`SizeComparison.regions`); só a explicação textual de outro tamanho ainda exige `persist:false` sob demanda.
@@ -238,7 +240,7 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - [ ] Digital Twin 3D — **infraestrutura concluída (Etapa 2)**: manifest v2, `useAvatarModel`, morphs via `computeBodyScale` → `avatarMorph.ts`, silhueta como fallback, controles de câmera. **PENDENTE: asset 3D real** (avatar GLB com morph targets). Ver `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`
 - [ ] Garment3D — **infraestrutura concluída (Etapa 2)**: `useGarmentModel`, `garmentVisual.ts` (cor/tecido/elasticidade/modelagem/medidas), `GarmentPrimitive` como fallback. **PENDENTE: asset 3D real** (8 GLBs por categoria)
 - [x] Integração com motor de caimento — **concluída (Etapa 3)**: `SizeComparison.regions` propagado do motor, `FitVisualizationState` (`fitVisualization.ts`), overlay por `status/deviation/score`, `SizeSelector3D` + `FitLegend`, troca de tamanho sem HTTP e `recommendedSize × selectedPreviewSize` em `result-view.tsx`. Ver `docs/implementation/ETAPA_03_FIT_INTEGRATION.md`
-- [ ] UX do provador — seletor de tamanho no 3D, comparação, disclaimer, fallback em camadas em `result-view.tsx` / `product-fit-preview.tsx`
+- [x] UX do provador — **concluída (Etapa 4)**: layout desktop 2 colunas / mobile ordenado, recomendado × visualizado explícito, seletor acessível (teclado, focus-visible, loading/disabled), controles Frente/Lateral/Costas/±/Reset, legenda de vestibilidade, estados loading/erro/fallback padronizados, `GET /recommendations/{id}?size=` para consistência de dados. Ver `docs/implementation/ETAPA_04_UX_PROVADOR.md`
 - [ ] CatVTON local — serviço isolado `apps/tryon/` com GPU, pesos locais, feature flag
 - [ ] Integração CatVTON — `routes/tryon.py`, `tryon_service.py`, `TryOnJob`, `flat_image_url`, seção em `result-view.tsx`
 - [ ] Docker — corrigir `Dockerfile.web`, `transpilePackages`, perfil GPU no compose, CI completa

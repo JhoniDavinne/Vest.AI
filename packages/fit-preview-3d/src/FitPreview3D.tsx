@@ -10,22 +10,29 @@ import { SizeSelector3D } from "./SizeSelector3D";
 import type { CameraCommand } from "./CameraRig";
 import type { CameraView } from "./cameraViews";
 import { applyFitStateToPayload, createFitVisualizationStateFromPayload } from "./fitVisualization";
-import { useFitPreviewCanvasHeight, useWebGLAvailable } from "./useFitPreview";
+import { usePrefersReducedMotion, useResponsiveCanvasHeight, useWebGLAvailable } from "./useFitPreview";
 import { useModelsManifest } from "./useModelsManifest";
+import { ensureFitPreviewStyles } from "./styles";
 
 function formatScore(value: number): string {
   return value.toFixed(1).replace(".", ",");
 }
+
+/** Tempo de tolerancia para o navegador restaurar um contexto WebGL perdido. */
+const CONTEXT_RESTORE_GRACE_MS = 1500;
 
 /**
  * Provador visual 3D.
  *
  *   RecommendationResponse → createFitVisualizationState*() → `fit`
  *   FitPreview3D
- *     ├── SizeSelector3D   (HTML)   tamanhos do motor, recomendado × selecionado
- *     ├── FitPreviewControls (HTML) camera
  *     ├── AvatarScene (Canvas)      avatar · peca · RegionalOverlay(fit.regionList)
+ *     ├── FitPreviewControls (HTML) Frente · Lateral · Costas · + · − · Reset
+ *     ├── SizeSelector3D   (HTML)   tamanhos do motor, recomendado × selecionado
  *     └── FitLegend (HTML)          "Peito — Compatível"
+ *
+ * Layout: canvas no topo, controles logo abaixo (nao cobrem o avatar no mobile),
+ * seletor e legenda em seguida. Um unico Canvas, nunca desmontado na troca de tamanho.
  *
  * Cadeia de fallback:
  *   WebGL indisponivel / contexto perdido → `fallback` (host mostra RegionGrid)
@@ -50,8 +57,13 @@ export function FitPreview3D({
   renderPlaceholders = false,
   onAssetError,
 }: FitPreview3DProps) {
+  React.useEffect(() => {
+    ensureFitPreviewStyles();
+  }, []);
+
   const webgl = useWebGLAvailable();
-  const height = useFitPreviewCanvasHeight(size);
+  const height = useResponsiveCanvasHeight(size);
+  const reducedMotion = usePrefersReducedMotion();
   const [contextLost, setContextLost] = React.useState(false);
   const { manifest, status: manifestStatus } = useModelsManifest(modelsBaseUrl, webgl && !contextLost);
 
@@ -67,16 +79,38 @@ export function FitPreview3D({
     setCameraCommand({ id: commandId.current, ...command });
   }, []);
 
+  // Perda de contexto WebGL: aguarda um curto periodo pela restauracao automatica
+  // (three.js recompila recursos) antes de cair para o fallback 2D definitivo.
+  const lostTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleContextLost = React.useCallback(() => {
-    setContextLost(true);
+    if (lostTimer.current) return;
+    lostTimer.current = setTimeout(() => {
+      lostTimer.current = null;
+      setContextLost(true);
+    }, CONTEXT_RESTORE_GRACE_MS);
   }, []);
+  const handleContextRestored = React.useCallback(() => {
+    if (lostTimer.current) {
+      clearTimeout(lostTimer.current);
+      lostTimer.current = null;
+    }
+  }, []);
+  React.useEffect(
+    () => () => {
+      if (lostTimer.current) clearTimeout(lostTimer.current);
+    },
+    [],
+  );
 
   const compact = size === "compact";
   const hasSelector = Boolean(sizes && sizes.length > 0 && onSelectSize);
   const summaryVisible = showSummary ?? Boolean(fit);
+  const updating = loadingSize != null && loadingSize === effectiveFit.size;
+  const rootClass = ["vfp-root", compact ? "vfp-compact" : "", className ?? ""].filter(Boolean).join(" ");
+  const fadeClass = reducedMotion ? undefined : "vfp-fade";
 
   const selector = hasSelector ? (
-    <div style={{ padding: compact ? "8px 8px 0" : "10px 10px 0" }}>
+    <div style={{ padding: compact ? "0 8px 8px" : "0 10px 10px" }}>
       <SizeSelector3D
         options={sizes ?? []}
         selectedSize={effectiveFit.size}
@@ -90,80 +124,78 @@ export function FitPreview3D({
 
   const summary = summaryVisible ? (
     <div
+      key={`summary-${effectiveFit.size}`}
       data-testid="fit-preview-summary"
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "baseline",
-        gap: 8,
-        padding: compact ? "8px 8px 0" : "10px 10px 0",
-        fontSize: compact ? 12 : 13,
-        color: "#2a2a2e",
-      }}
+      className={["vfp-summary", fadeClass].filter(Boolean).join(" ")}
+      style={{ padding: compact ? "8px 8px 0" : "10px 10px 0", fontSize: compact ? 12 : 13 }}
     >
       <span>
         Tamanho <strong>{effectiveFit.size}</strong>
       </span>
       {effectiveFit.fitScore != null ? (
         <span>
-          · score <strong>{formatScore(effectiveFit.fitScore)}</strong>/10
+          · caimento <strong>{formatScore(effectiveFit.fitScore)}</strong>/10
         </span>
       ) : null}
       {effectiveFit.recommendedSize ? (
-        <span style={{ color: effectiveFit.isRecommended ? "#5f7f6a" : "#6f6b66" }}>
-          {effectiveFit.isRecommended ? "· tamanho recomendado" : `· recomendado: ${effectiveFit.recommendedSize}`}
+        <span className="vfp-muted" style={{ color: effectiveFit.isRecommended ? "#5f7f6a" : undefined }}>
+          {effectiveFit.isRecommended ? "· recomendado" : `· recomendado: ${effectiveFit.recommendedSize}`}
         </span>
       ) : null}
-      {loadingSize ? <span style={{ color: "#8a837a" }}>· atualizando…</span> : null}
     </div>
   ) : null;
 
-  const legend = showLegend ? <FitLegend fit={effectiveFit} compact={compact} /> : null;
+  const legend = showLegend ? (
+    <div key={`legend-${effectiveFit.size}`} className={fadeClass} style={{ padding: compact ? "0 8px 8px" : "0 10px 10px" }}>
+      <FitLegend fit={effectiveFit} compact={compact} variant="inline" />
+    </div>
+  ) : null;
 
-  const fallbackNode =
-    fallback ?? (
-      <div
-        style={{
-          minHeight: height,
-          display: "grid",
-          placeItems: "center",
-          padding: 16,
-          borderRadius: 24,
-          border: "1px solid #ddd6cb",
-          background: "#f7f4ef",
-          color: "#6b6560",
-          fontSize: 14,
-          textAlign: "center",
-        }}
-      >
-        Prévia 3D indisponível neste dispositivo. Use a análise por região abaixo.
-      </div>
-    );
+  const disclaimer = showDisclaimer ? <p className="vfp-disclaimer">{payload.disclaimer || FIT_PREVIEW_DISCLAIMER}</p> : null;
+
+  const fallbackNode = fallback ?? (
+    <div className="vfp-fallback" style={{ minHeight: Math.min(height, 240) }}>
+      Prévia 3D indisponível neste dispositivo. Use a análise por região.
+    </div>
+  );
 
   if (!webgl || contextLost) {
     // Sem Canvas: seletor, resumo e legenda continuam funcionando (dados do motor).
     return (
-      <div className={className} data-testid="fit-preview-fallback">
-        {selector}
+      <div className={rootClass} data-testid="fit-preview-fallback">
         {summary}
         {fallbackNode}
+        {selector}
         {legend}
+        {disclaimer}
       </div>
     );
   }
 
   return (
-    <div className={className} data-testid="fit-preview-3d" data-manifest-status={manifestStatus} data-size={effectiveFit.size}>
-      <div
-        style={{
-          overflow: "hidden",
-          borderRadius: compact ? 16 : 24,
-          border: "1px solid #ddd6cb",
-          background: "#f7f4ef",
-        }}
-      >
-        {selector}
+    <div className={rootClass} data-testid="fit-preview-3d" data-manifest-status={manifestStatus} data-size={effectiveFit.size}>
+      <div className={compact ? "vfp-frame vfp-compact" : "vfp-frame"}>
         {summary}
+        <div className="vfp-stage" aria-busy={updating || undefined}>
+          {updating ? (
+            <div className="vfp-updating" role="status" aria-live="polite">
+              <span className="vfp-spinner" aria-hidden="true" />
+              Atualizando tamanho…
+            </div>
+          ) : null}
+          <AvatarScene
+            payload={effectivePayload}
+            regions={effectiveFit.regionList}
+            modelsBaseUrl={modelsBaseUrl}
+            manifest={manifest}
+            renderPlaceholders={renderPlaceholders}
+            height={height}
+            cameraCommand={cameraCommand}
+            onContextLost={handleContextLost}
+            onContextRestored={handleContextRestored}
+            onAssetError={onAssetError}
+          />
+        </div>
         {showControls ? (
           <FitPreviewControls
             compact={compact}
@@ -182,43 +214,12 @@ export function FitPreview3D({
             }}
           />
         ) : null}
-        <div style={{ marginTop: 8 }}>
-          <AvatarScene
-            payload={effectivePayload}
-            regions={effectiveFit.regionList}
-            modelsBaseUrl={modelsBaseUrl}
-            manifest={manifest}
-            renderPlaceholders={renderPlaceholders}
-            height={height}
-            cameraCommand={cameraCommand}
-            onContextLost={handleContextLost}
-            onAssetError={onAssetError}
-          />
-        </div>
-        {legend ? <div style={{ paddingBottom: compact ? 8 : 10 }}>{legend}</div> : null}
+        {selector}
+        {legend}
       </div>
-      {showDisclaimer ? (
-        <p
-          style={{
-            marginTop: 8,
-            fontSize: compact ? 10 : 11,
-            lineHeight: 1.45,
-            color: "#8a837a",
-          }}
-        >
-          {payload.disclaimer || FIT_PREVIEW_DISCLAIMER}
-        </p>
-      ) : null}
-      <p
-        style={{
-          marginTop: 4,
-          fontSize: 10,
-          color: "#a39a90",
-          textAlign: "center",
-        }}
-        aria-hidden="true"
-      >
-        Arraste para rotacionar · scroll para zoom
+      {disclaimer}
+      <p className="vfp-hint" aria-hidden="true">
+        Arraste para rotacionar · scroll ou pinça para zoom
       </p>
     </div>
   );

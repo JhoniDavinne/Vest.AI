@@ -96,6 +96,29 @@ def test_comparison_propagates_engine_regions_per_size(client):
     assert lg["fit_score"] == comparison["L"]["fit_score"]
 
 
+def test_get_recommendation_with_size_uses_persisted_snapshot(client):
+    """GET /recommendations/{id}?size=L recalcula outro tamanho com as MESMAS medidas da analise."""
+    created = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-M", "customer": DEMO_CUSTOMER}).json()
+    comparison = {c["size"]: c for c in created["comparison"]}
+
+    other = client.get(f"{API}/recommendations/{created['analysis_id']}", params={"size": "L"})
+    assert other.status_code == 200
+    body = other.json()
+    assert body["analysis_id"] == created["analysis_id"]
+    assert body["evaluated_size"] == "L"
+    assert body["recommended_size"] == created["recommended_size"]
+    # Consistente com o comparison da analise original (mesmo snapshot: altura/peso preservados)
+    assert body["fit_score"] == comparison["L"]["fit_score"]
+    assert body["regions"] == comparison["L"]["regions"]
+    assert body["confidence"] == created["confidence"]
+
+    # Nao altera a analise persistida
+    original = client.get(f"{API}/recommendations/{created['analysis_id']}").json()
+    assert original["evaluated_size"] == "M"
+
+    assert client.get(f"{API}/recommendations/{created['analysis_id']}", params={"size": "XXL"}).status_code == 404
+
+
 def test_recommendation_other_size_changes_score(client):
     m = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-M", "customer": DEMO_CUSTOMER}).json()
     lg = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-L", "customer": DEMO_CUSTOMER}).json()

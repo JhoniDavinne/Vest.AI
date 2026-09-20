@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from ....api.deps import DbSession, OptionalCompany
 from ....models import FitAnalysis
@@ -30,14 +30,32 @@ def create_recommendation(
     return recommendation_service.run_recommendation(db, payload, company.id if company else None)
 
 
-@router.get("/{analysis_id}", response_model=RecommendationResponse, summary="Recuperar analise persistida")
-def get_recommendation(analysis_id: str, db: DbSession) -> RecommendationResponse:
+@router.get(
+    "/{analysis_id}",
+    response_model=RecommendationResponse,
+    summary="Recuperar analise persistida",
+    description=(
+        "Recalcula de forma deterministica a partir do snapshot persistido (mesmo motor, mesma saida). "
+        "Com `size`, avalia outro tamanho do mesmo produto usando exatamente as mesmas medidas da analise "
+        "original, sem persistir nova analise."
+    ),
+)
+def get_recommendation(
+    analysis_id: str,
+    db: DbSession,
+    size: str | None = Query(default=None, description="Tamanho a avaliar (ex.: L); padrao = tamanho da analise"),
+) -> RecommendationResponse:
     analysis = db.get(FitAnalysis, analysis_id)
     if analysis is None:
         raise NotFoundError("Analise nao encontrada.")
     # Recalcula de forma deterministica a partir do snapshot persistido (mesmo motor, mesma saida).
     product = get_product(db, analysis.product_id)
-    evaluated = next(s for s in product.sizes if s.id == analysis.evaluated_sku_id)
+    if size:
+        evaluated = next((s for s in product.sizes if s.size_label.lower() == size.lower()), None)
+        if evaluated is None:
+            raise NotFoundError(f"Tamanho '{size}' nao existe para o produto.")
+    else:
+        evaluated = next(s for s in product.sizes if s.id == analysis.evaluated_sku_id)
     snapshot = analysis.input_snapshot or {}
     payload = RecommendationRequest(
         sku=evaluated.sku,
@@ -51,6 +69,8 @@ def get_recommendation(analysis_id: str, db: DbSession) -> RecommendationRespons
         channel="web",
     )
     response = recommendation_service.run_recommendation(db, payload, analysis.company_id)
+    # Avaliacao de outro tamanho e derivada (nao persistida): mantem o vinculo com a analise,
+    # mas nao altera o tamanho avaliado registrado.
     response.analysis_id = analysis.id
     response.created_at = analysis.created_at
     return response

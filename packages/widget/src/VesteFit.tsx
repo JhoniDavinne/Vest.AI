@@ -38,7 +38,10 @@ export interface VesteFitProps {
   onResult?: (result: RecommendationResponse) => void;
   /** Abre o modal ja no primeiro render (uso em demonstracoes). */
   defaultOpen?: boolean;
-  /** Carrega o provador visual 3D no passo de resultado (lazy). */
+  /**
+   * Carrega o provador visual 3D no passo de resultado (lazy).
+   * Padrao `false`: o bundle 3D (three/R3F) so entra quando a loja optar explicitamente.
+   */
   enable3D?: boolean;
 }
 
@@ -82,7 +85,7 @@ export function VesteFit({
   onSelectSize,
   onResult,
   defaultOpen = false,
-  enable3D = true,
+  enable3D = false,
 }: VesteFitProps) {
   const [open, setOpen] = React.useState(defaultOpen);
   const [step, setStep] = React.useState<Step>("form");
@@ -265,7 +268,7 @@ interface ResultViewProps {
   enable3D?: boolean;
 }
 
-function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, onConfirm, enable3D = true }: ResultViewProps) {
+function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, onConfirm, enable3D = false }: ResultViewProps) {
   const selected = result.comparison.find((c) => c.size === selectedSize) ?? result.comparison[0];
   const regionEntries = Object.entries(result.regional_analysis) as [RegionKey, RegionStatus][];
   return (
