@@ -22,6 +22,8 @@ class Settings(BaseSettings):
         description="URL SQLAlchemy do banco de dados",
     )
     sqlite_fallback_url: str = "sqlite:///./veste_ai.db"
+    # Demo local sem Postgres. Em Docker/compose fica False para nao mascarar falha do banco.
+    allow_sqlite_fallback: bool = True
     auto_create_schema: bool = True  # cria tabelas na subida (util para demo/offline)
     auto_seed: bool = True           # popula seed na subida se o banco estiver vazio
 

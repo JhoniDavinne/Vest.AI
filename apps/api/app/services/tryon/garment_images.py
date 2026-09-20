@@ -36,20 +36,53 @@ def load_garment_image(url: str, settings: Settings) -> bytes:
     if kind is None:
         raise FlatImageUnavailableError()
     if kind == "internal":
-        path = ASSETS_FLAT_DIR / url[len(INTERNAL_PREFIX):]
-        try:
-            return path.read_bytes()
-        except OSError:
-            logger.warning("imagem flat interna ausente para o produto")
-            raise FlatImageUnavailableError() from None
+        return _read_internal(url[len(INTERNAL_PREFIX) :])
+    return _fetch_remote(url)
+
+
+def _read_internal(name: str) -> bytes:
+    """Le somente arquivos regulares sob `ASSETS_FLAT_DIR` (resolve + is_relative_to)."""
+    root = ASSETS_FLAT_DIR.resolve()
+    path = (ASSETS_FLAT_DIR / name).resolve()
     try:
-        response = httpx.get(url, timeout=10.0, follow_redirects=False)
+        if not path.is_relative_to(root) or not path.is_file():
+            raise FlatImageUnavailableError()
+        data = path.read_bytes()
+    except OSError:
+        logger.warning("imagem flat interna ausente para o produto")
+        raise FlatImageUnavailableError() from None
+    if len(data) > _MAX_REMOTE_BYTES:
+        raise FlatImageUnavailableError()
+    return data
+
+
+def _fetch_remote(url: str) -> bytes:
+    """GET http(s) sem seguir redirects, com teto de bytes (nao carrega o corpo inteiro na memoria primeiro)."""
+    try:
+        with httpx.Client(timeout=10.0, follow_redirects=False) as client:
+            with client.stream("GET", url) as response:
+                if response.status_code != 200:
+                    raise FlatImageUnavailableError()
+                length = response.headers.get("content-length")
+                if length is not None:
+                    try:
+                        if int(length) > _MAX_REMOTE_BYTES:
+                            raise FlatImageUnavailableError()
+                    except ValueError:
+                        pass
+                chunks: list[bytes] = []
+                total = 0
+                for chunk in response.iter_bytes(chunk_size=64 * 1024):
+                    total += len(chunk)
+                    if total > _MAX_REMOTE_BYTES:
+                        raise FlatImageUnavailableError()
+                    chunks.append(chunk)
+                return b"".join(chunks)
+    except FlatImageUnavailableError:
+        raise
     except httpx.HTTPError as exc:
         logger.warning("falha ao obter imagem flat remota: %s", type(exc).__name__)
         raise FlatImageUnavailableError() from exc
-    if response.status_code != 200 or len(response.content) > _MAX_REMOTE_BYTES:
-        raise FlatImageUnavailableError()
-    return response.content
 
 
 def _classify(url: str, settings: Settings) -> str | None:
@@ -61,6 +94,9 @@ def _classify(url: str, settings: Settings) -> str | None:
             return "internal"
         return None
     parsed = urlparse(url)
+    # userinfo (user:pass@host) e schemes nao-http sao rejeitados mesmo com host na allowlist.
+    if parsed.username is not None or parsed.password is not None:
+        return None
     if parsed.scheme in ("http", "https") and parsed.hostname:
         allowed = {h.lower() for h in settings.tryon_flat_image_allowed_hosts}
         if parsed.hostname.lower() in allowed:

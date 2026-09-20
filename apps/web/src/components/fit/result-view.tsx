@@ -9,7 +9,7 @@ import { FIT_PREFERENCE_LABEL, MODELING_LABEL } from "@veste-ai/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useProfile } from "@/lib/profile";
 import { cn } from "@/lib/utils";
-import { initialTryOnState, msUntilExpiry, tryOnReducer } from "@/lib/tryon";
+import { initialTryOnState, isBusyPhase, msUntilExpiry, tryOnReducer } from "@/lib/tryon";
 import { TryOnPanel } from "./tryon-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,8 @@ export function ResultView({ analysisId }: { analysisId: string }) {
   const [tryOn, dispatchTryOn] = React.useReducer(tryOnReducer, initialTryOnState);
   const [tryOnAvailability, setTryOnAvailability] = React.useState<TryOnAvailability | null>(null);
   const tryOnAbort = React.useRef<AbortController | null>(null);
+  // Gerações descartam conclusões stale se o usuário trocar de tamanho ou resetar no meio do request.
+  const tryOnGeneration = React.useRef(0);
 
   React.useEffect(() => {
     api
@@ -90,7 +92,13 @@ export function ResultView({ analysisId }: { analysisId: string }) {
     return () => window.clearTimeout(timer);
   }, [tryOn.phase, tryOn.job]);
 
-  React.useEffect(() => () => tryOnAbort.current?.abort(), []);
+  React.useEffect(
+    () => () => {
+      tryOnGeneration.current += 1;
+      tryOnAbort.current?.abort();
+    },
+    [],
+  );
 
   // Estado visual do tamanho selecionado: comparison (sem HTTP) -> resposta detalhada -> null.
   const selection = React.useMemo(
@@ -156,6 +164,12 @@ export function ResultView({ analysisId }: { analysisId: string }) {
   const selectSize = React.useCallback(
     (size: string) => {
       if (!base || size === selectedSize) return;
+      // Resultado/request do try-on e por tamanho: nao reutilizar imagem de outro SKU.
+      if (isBusyPhase(tryOn.phase) || tryOn.phase === "completed") {
+        tryOnGeneration.current += 1;
+        tryOnAbort.current?.abort();
+        dispatchTryOn({ type: "reset" });
+      }
       setPreviewSize(size);
       setSizeError(null);
       // Sem `regions` no comparison (resposta antiga/incompleta) a API e a unica fonte.
@@ -163,7 +177,7 @@ export function ResultView({ analysisId }: { analysisId: string }) {
         void fetchDetail(size, base);
       }
     },
-    [base, selectedSize, detailBySize, fetchDetail],
+    [base, selectedSize, detailBySize, fetchDetail, tryOn.phase],
   );
 
   const submitTryOn = React.useCallback(async () => {
@@ -171,6 +185,7 @@ export function ResultView({ analysisId }: { analysisId: string }) {
       dispatchTryOn({ type: "submit" }); // reducer devolve consent_required / mensagem adequada
       return;
     }
+    const generation = ++tryOnGeneration.current;
     dispatchTryOn({ type: "submit" });
     const controller = new AbortController();
     tryOnAbort.current = controller;
@@ -178,14 +193,20 @@ export function ResultView({ analysisId }: { analysisId: string }) {
       // O tamanho enviado e a selecao valida do usuario (ou o recomendado): o provider nao escolhe tamanho.
       const job = await api.tryOn(
         { analysisId: base.analysis_id, size: selectedSize, photo: tryOn.file, consentTryOn: true },
-        { onUploaded: () => dispatchTryOn({ type: "uploaded" }), signal: controller.signal },
+        {
+          onUploaded: () => {
+            if (generation === tryOnGeneration.current) dispatchTryOn({ type: "uploaded" });
+          },
+          signal: controller.signal,
+        },
       );
+      if (generation !== tryOnGeneration.current || controller.signal.aborted) return;
       dispatchTryOn({ type: "completed", job });
     } catch (err) {
-      if (err instanceof ApiError && err.code === "aborted") return;
+      if (generation !== tryOnGeneration.current || (err instanceof ApiError && err.code === "aborted")) return;
       dispatchTryOn({ type: "failed", error: err });
     } finally {
-      tryOnAbort.current = null;
+      if (tryOnAbort.current === controller) tryOnAbort.current = null;
     }
   }, [base, tryOn.file, tryOn.consent, selectedSize]);
 
@@ -454,7 +475,7 @@ export function ResultView({ analysisId }: { analysisId: string }) {
       {tryOnAvailability?.enabled ? (
         <TryOnPanel
           state={tryOn}
-          size={selectedSize}
+          size={tryOn.phase === "completed" && tryOn.job?.size ? tryOn.job.size : selectedSize}
           recommendedSize={recommendedSize}
           productSupported={Boolean(product?.tryon_supported)}
           providerEnabled={tryOnAvailability.enabled}
@@ -465,6 +486,7 @@ export function ResultView({ analysisId }: { analysisId: string }) {
           onPickFile={(file) => dispatchTryOn({ type: "pick_file", file })}
           onSubmit={() => void submitTryOn()}
           onReset={() => {
+            tryOnGeneration.current += 1;
             tryOnAbort.current?.abort();
             dispatchTryOn({ type: "reset" });
             // Revalida a disponibilidade ao tentar novamente apos indisponibilidade.

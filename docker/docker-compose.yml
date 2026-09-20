@@ -39,6 +39,7 @@ services:
       VESTE_RUN_MIGRATIONS: "true"          # alembic upgrade head (nao destrutivo) no prestart
       VESTE_AUTO_CREATE_SCHEMA: "false"     # schema vem das migrations
       VESTE_AUTO_SEED: ${VESTE_AUTO_SEED:-true}
+      VESTE_ALLOW_SQLITE_FALLBACK: "false"  # Postgres e obrigatorio no compose; sem mascarar falha
       VESTE_CORS_ORIGINS: '${VESTE_CORS_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}'
       VESTE_TRUSTED_HOSTS: '${VESTE_TRUSTED_HOSTS:-["*"]}'
       VESTE_LOG_JSON: ${VESTE_LOG_JSON:-true}

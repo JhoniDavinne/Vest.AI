@@ -401,3 +401,72 @@ def test_seed_products_flat_images_exist_on_disk(client):
     assert len(urls) >= 4
     for url in urls:
         assert (ASSETS_FLAT_DIR / url.rsplit("/", 1)[-1]).exists()
+
+
+# --------------------------------------------------------------------------- #
+# Resolucao segura da imagem da peca (nunca URL do usuario)
+# --------------------------------------------------------------------------- #
+def test_garment_images_rejects_traversal_userinfo_and_arbitrary_hosts(monkeypatch):
+    from app.services.tryon.errors import FlatImageUnavailableError
+    from app.services.tryon.garment_images import is_valid_flat_image_url, load_garment_image
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "tryon_flat_image_allowed_hosts", ["cdn.example.com"])
+
+    assert is_valid_flat_image_url("/assets/flat/camiseta-essential.jpg", settings) is True
+    assert is_valid_flat_image_url("/assets/flat/../secret.jpg", settings) is False
+    assert is_valid_flat_image_url("/assets/flat/sub/a.jpg", settings) is False
+    assert is_valid_flat_image_url("https://evil.example/x.jpg", settings) is False
+    assert is_valid_flat_image_url("https://cdn.example.com/a.jpg", settings) is True
+    assert is_valid_flat_image_url("https://evil@cdn.example.com/a.jpg", settings) is False
+    assert is_valid_flat_image_url("file:///etc/passwd", settings) is False
+
+    with pytest.raises(FlatImageUnavailableError):
+        load_garment_image("/assets/flat/../secret.jpg", settings)
+    with pytest.raises(FlatImageUnavailableError):
+        load_garment_image("https://evil.example/x.jpg", settings)
+
+
+def test_garment_images_remote_respects_byte_cap(monkeypatch):
+    from app.services.tryon.errors import FlatImageUnavailableError
+    from app.services.tryon import garment_images as gi
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "tryon_flat_image_allowed_hosts", ["cdn.test"])
+
+    class _Oversize:
+        status_code = 200
+        headers = {"content-length": str(gi._MAX_REMOTE_BYTES + 1)}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def iter_bytes(self, chunk_size=0):
+            yield b"x" * (gi._MAX_REMOTE_BYTES + 1)
+
+    class _Client:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def stream(self, *args, **kwargs):
+            return _Oversize()
+
+    monkeypatch.setattr(gi.httpx, "Client", _Client)
+    with pytest.raises(FlatImageUnavailableError):
+        gi.load_garment_image("https://cdn.test/huge.jpg", settings)
+
+
+def test_assets_mount_serves_flat_only(client):
+    ok = client.get("/assets/flat/camiseta-essential.jpg")
+    assert ok.status_code == 200
+    # Montagem restrita a /assets/flat — nao expoe o diretorio pai.
+    assert client.get("/assets/").status_code in (404, 405, 307)

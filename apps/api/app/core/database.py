@@ -50,11 +50,16 @@ def init_engine(url: str | None = None) -> Engine:
     settings = get_settings()
     candidate = url or settings.database_url
     engine = _make_engine(candidate)
-    if not _try_connect(engine) and settings.environment != "production":
-        logger.warning("Usando fallback SQLite: %s", settings.sqlite_fallback_url)
-        engine.dispose()
-        engine = _make_engine(settings.sqlite_fallback_url)
-        candidate = settings.sqlite_fallback_url
+    if not _try_connect(engine):
+        can_fallback = settings.allow_sqlite_fallback and settings.environment != "production"
+        if can_fallback:
+            logger.warning("Usando fallback SQLite: %s", settings.sqlite_fallback_url)
+            engine.dispose()
+            engine = _make_engine(settings.sqlite_fallback_url)
+            candidate = settings.sqlite_fallback_url
+        else:
+            engine.dispose()
+            raise RuntimeError("Banco indisponivel e fallback SQLite desativado neste ambiente.")
     _engine = engine
     _active_url = candidate
     _SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)

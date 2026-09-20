@@ -14,6 +14,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from ....api.deps import DbSession
 from ....core.config import get_settings
+from ....core.database import session_factory
 from ....schemas import TryOnErrorOut, TryOnJobOut, TryOnStatusOut
 from ....services.tryon import service as tryon_service
 from ....services.tryon.provider import VirtualTryOnProvider
@@ -38,6 +39,33 @@ def tryon_status(provider: Provider) -> TryOnStatusOut:
     return tryon_service.tryon_status(provider)
 
 
+def _create_tryon_in_worker(
+    provider: VirtualTryOnProvider,
+    *,
+    analysis_id: str,
+    photo: bytes,
+    photo_content_type: str | None,
+    photo_filename: str | None,
+    consent_tryon: bool,
+    size: str | None,
+) -> TryOnJobOut:
+    """Sessao SQLAlchemy criada no mesmo thread da inferencia (Session nao e thread-safe)."""
+    db = session_factory()()
+    try:
+        return tryon_service.create_tryon(
+            db,
+            provider,
+            analysis_id=analysis_id,
+            photo=photo,
+            photo_content_type=photo_content_type,
+            photo_filename=photo_filename,
+            consent_tryon=consent_tryon,
+            size=size,
+        )
+    finally:
+        db.close()
+
+
 @router.post(
     "",
     response_model=TryOnJobOut,
@@ -53,7 +81,6 @@ def tryon_status(provider: Provider) -> TryOnStatusOut:
     ),
 )
 async def create_tryon(
-    db: DbSession,
     provider: Provider,
     person: Annotated[UploadFile, File(description="Foto frontal de corpo inteiro (JPG/PNG/WebP)")],
     analysis_id: Annotated[str, Form(min_length=8, max_length=64)],
@@ -63,14 +90,15 @@ async def create_tryon(
     settings = get_settings()
     # Leitura limitada (+1 byte para detectar excesso) — a foto fica somente em memoria.
     data = await person.read(settings.tryon_max_photo_bytes + 1)
+    content_type = person.content_type
+    filename = person.filename
     return await run_in_threadpool(
-        tryon_service.create_tryon,
-        db,
+        _create_tryon_in_worker,
         provider,
         analysis_id=analysis_id,
         photo=data,
-        photo_content_type=person.content_type,
-        photo_filename=person.filename,
+        photo_content_type=content_type,
+        photo_filename=filename,
         consent_tryon=consent_tryon,
         size=size,
     )

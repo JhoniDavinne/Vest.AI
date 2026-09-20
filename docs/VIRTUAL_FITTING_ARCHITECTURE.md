@@ -236,19 +236,21 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - ~~`docker/Dockerfile.web` não copia `packages/fit-preview-3d/package.json` antes do `npm ci` → build Docker do web tende a falhar.~~ Corrigido na Etapa 7 (multi-stage com todos os workspaces, standalone; build validado).
 - Imagem `tryon` com ≈20 GB (CUDA + torch cu128); try-on síncrono (`MAX_CONCURRENT_JOBS=1`) — fila assíncrona necessária antes de produção multiusuário.
 - ~~`apps/web/next.config.ts` não inclui `@veste-ai/fit-preview-3d` em `transpilePackages`.~~ Corrigido na Etapa 2.
-- `npm run lint:web` falha com 8 erros `react-hooks/set-state-in-effect` pré-existentes em `apps/web/src/**` (ex.: `src/lib/profile.tsx`) — fora do escopo do 3D, mas bloqueia um gate de CI futuro.
+- `npm run lint:web` falha com 8 erros `react-hooks/set-state-in-effect` pré-existentes em `apps/web/src/**` (ex.: `src/lib/profile.tsx`) — fora do escopo do 3D/try-on, mas bloqueia um gate de CI futuro.
 - `.github/workflows/ci.yml` não roda typecheck/lint/test do web nem testes do `fit-preview-3d`.
-- ~~Widget (`packages/widget`) empacota three/R3F no IIFE e `enable3D` default `true`.~~ Etapa 4: `enable3D` padrão `false` (opt-in); o IIFE ainda inclui three/R3F por ser lazy no mesmo bundle — separar chunk fica para a etapa Docker/build.
+- ~~Widget (`packages/widget`) empacota three/R3F no IIFE e `enable3D` default `true`.~~ Etapa 4: `enable3D` padrão `false` (opt-in); o IIFE ainda inclui three/R3F por ser lazy no mesmo bundle (`embed.global.js` 4,37 MB — Etapa 8).
 - Avatar com apenas 6 medidas corporais → morphs derivados por heurística; risco de representação enganosa. Manter clamps de `scaleBody.ts` e disclaimer.
 - Deformação da peça sem física pode sugerir caimento incorreto → mapear estritamente de `regions[].deviation/status` do motor.
 - ~~Comparar tamanhos no 3D com o contrato atual exige N chamadas a `POST /recommendations`.~~ Resolvido na Etapa 3 (`SizeComparison.regions`); só a explicação textual de outro tamanho ainda exige `persist:false` sob demanda.
-- GLBs reais em `apps/web/public/models` afetam LCP da PDP → Draco/meshopt, preload tardio, `dpr` adaptativo.
-- Sem autenticação de consumidor (`GET /users/{id}` aberto; `userId` em `localStorage`) → bloqueador antes de qualquer feature que gere imagem da pessoa (VTO).
+- GLBs reais em `apps/web/public/models` afetam LCP da PDP → Draco/meshopt, preload tardio, `dpr` adaptativo. **Pendente: assets 3D reais** (silhueta/primitivas não quebram a app — Etapa 8).
+- Sem autenticação de consumidor (`GET /users/{id}` aberto; `userId` em `localStorage`; `analysis_id` UUID suficiente para demo, **IDOR em ambiente público**). Não bloqueia TCC; bloqueia deployment público — ver Etapa 8.
 - ~~Python local 3.14 vs API ≥ 3.11 vs CatVTON 3.9 → isolamento obrigatório do serviço VTO.~~ Resolvido na Etapa 5: `apps/tryon/.venv` com Python 3.12 dedicado; pins oficiais do CatVTON são internamente inconsistentes (peft ↔ accelerate) e `torch 2.4` não suporta RTX 50 — desvios documentados.
 - CatVTON ≈ 36–38 s por imagem na RTX 5070 (WDDM, GPU compartilhada). A Etapa 6 integrou de forma **síncrona** (requisição aberta durante a geração, `provider_busy` para o segundo usuário simultâneo); fila assíncrona + polling ficam para a etapa de deployment.
-- Try-on sem autenticação de consumidor: qualquer portador de `analysis_id` pode gerar a visualização daquela análise (foto só em memória, mas o acesso ao resultado depende do `job_id`). Bloqueador antes de ambiente compartilhado.
+- Try-on sem autenticação de consumidor: qualquer portador de `analysis_id` pode gerar a visualização daquela análise (foto só em memória, mas o acesso ao resultado depende do `job_id`). Bloqueador antes de ambiente compartilhado. **TCC/demo: não bloqueia** (Etapa 8).
 - Imagens flat do seed são geradas por IA (demo); catálogo real exige fotos flat dos produtos (`Product.flat_image_url`).
 - Pasta órfã `veste-ai/apps/api/veste_ai.db` na raiz (remover).
+- **Licença CatVTON CC BY-NC-SA 4.0**: adequada a TCC/demonstração não comercial; **não usar como backend comercial B2B** sem revisão de licença/modelo.
+- Compose: `VESTE_ALLOW_SQLITE_FALLBACK=false` (Etapa 8) — Postgres obrigatório no Docker.
 
 ---
 
@@ -261,5 +263,6 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - [x] CatVTON local — **concluída (Etapa 5)**: `apps/tryon/` isolado (Python 3.12, torch 2.7.1+cu128), CatVTON oficial pinado, inferência real na RTX 5070 (bf16, 768×1024, ≈36 s), serviço FastAPI `/health` + `/try-on` + `/results`, modelo carregado uma vez, concorrência/OOM controlados, 14 testes unitários + integração. Ver `docs/implementation/ETAPA_05_CATVTON_LOCAL.md`
 - [x] Integração CatVTON — **concluída (Etapa 6)**: `services/tryon/` (provider abstrato + `CatVTONProvider`), `routes/tryon.py`, `TryOnJob` (metadados), `Product.flat_image_url` + assets flat, consentimento específico, cache determinístico, `health.tryon`, seção "Provador com foto · Experimental" em `result-view.tsx`, E2E real com CatVTON na RTX 5070. Ver `docs/implementation/ETAPA_06_CATVTON_INTEGRATION.md`
 - [x] Docker / preparação para deployment — **concluída (Etapa 7)**: `Dockerfile.web` corrigido (multi-stage, standalone), `Dockerfile.api` com prestart (wait DB + Alembic não destrutivo, logs JSON, CORS/trusted hosts por ambiente), `Dockerfile.tryon` (CUDA 12.8, torch cu128, CatVTON pinado, checkpoints em volume), compose com healthchecks encadeados e profile `gpu` (`docker/gpu.env`, `VESTE_TRYON_URL=http://tryon:8100`), GPU validada no container (RTX 5070, geração real em 25,8 s). Ver `docs/implementation/ETAPA_07_DOCKER_DEPLOYMENT.md`
+- [x] Auditoria final — **concluída (Etapa 8)**: motor único confirmado; bugs reais de sessão/try-on, fetch da peça, estado stale e fallback SQLite no Docker corrigidos; demo TCC **READY**; deployment público **REQUIRES SECURITY WORK** (IDOR `analysis_id`, sem auth de consumidor). Ver `docs/implementation/ETAPA_08_FINAL_AUDIT.md`
 - [ ] Cloud / CI — registry e build das imagens na CI, fila assíncrona para o try-on, secrets, TLS/reverse proxy, autenticação de consumidor (sem escolha de provedor ainda)
-- [ ] Testes finais — unitários do pacote 3D, `test_api.py` para novos schemas, E2E de fallback (WebGL off / GPU off / timeout)
+- [ ] Testes finais — unitários do pacote 3D, `test_api.py` para novos schemas, E2E de fallback (WebGL off / GPU off / timeout) — cobertura unitária das Etapas 2–7 já existe; lint web pré-existente ainda falha

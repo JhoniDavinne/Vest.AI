@@ -64,19 +64,19 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    is_production = settings.environment == "production"
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
         description=DESCRIPTION,
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/api/v1/openapi.json",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/api/v1/openapi.json",
         contact={"name": "VESTE.AI", "url": "https://veste.ai"},
     )
     # CORS: em producao somente as origens configuradas; em dev/demo qualquer origem
     # (widget incorporado em paginas de terceiros). Sem credenciais em ambos os casos.
-    is_production = settings.environment == "production"
     allow_any = settings.cors_allow_any_origin_in_dev and not is_production
     app.add_middleware(
         CORSMiddleware,
@@ -107,12 +107,18 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=exc.status_code, content=exc.to_payload(), headers=headers)
 
     app.include_router(api_router, prefix=settings.api_prefix)
-    # Imagens flat das pecas (assets internos do catalogo demo) para o provador com foto.
-    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+    # Somente a pasta flat (imagens de peca do catalogo demo) — nao expoe o resto de app/assets.
+    flat_dir = ASSETS_DIR / "flat"
+    if flat_dir.is_dir():
+        app.mount("/assets/flat", StaticFiles(directory=flat_dir), name="assets_flat")
 
     @app.get("/", include_in_schema=False)
     def root() -> dict:
-        return {"name": settings.app_name, "docs": "/docs", "api": settings.api_prefix}
+        return {
+            "name": settings.app_name,
+            "docs": None if is_production else "/docs",
+            "api": settings.api_prefix,
+        }
 
     return app
 
