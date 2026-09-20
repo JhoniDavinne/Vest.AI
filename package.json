@@ -24,7 +24,11 @@
     "pipeline:test": "python pipelines/tests/run_all.py",
     "models:3d": "python scripts/generate_3d_models.py",
     "docker:up": "docker compose -f docker/docker-compose.yml up --build",
-    "docker:down": "docker compose -f docker/docker-compose.yml down -v"
+    "docker:up:gpu": "docker compose -f docker/docker-compose.yml --env-file docker/gpu.env up --build",
+    "docker:build": "docker compose -f docker/docker-compose.yml build",
+    "docker:build:gpu": "docker compose -f docker/docker-compose.yml --env-file docker/gpu.env build tryon",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:down:volumes": "docker compose -f docker/docker-compose.yml down -v"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1.7
+# VESTE.AI try-on (CatVTON local, GPU NVIDIA) — servico isolado apps/tryon (Etapa 5).
+#
+# * Base CUDA 12.8 runtime + cuDNN (Ubuntu 24.04 -> Python 3.12, mesmo do ambiente local).
+# * PyTorch 2.7.1+cu128 (kernels sm_120 / RTX 50) via apps/tryon/requirements.txt.
+# * CatVTON oficial clonado no commit pinado (mesmo de scripts/fetch_catvton.ps1).
+# * NENHUM checkpoint na imagem: cache HuggingFace em volume (TRYON_MODEL_PATH=/data/models),
+#   baixado pelo mecanismo oficial na primeira subida.
+# * Modelo carregado UMA vez no startup; /health so fica healthy com modelLoaded=true.
+# Requer NVIDIA Container Toolkit no host (ver docs/implementation/ETAPA_07_DOCKER_DEPLOYMENT.md).
+
+ARG CUDA_IMAGE=nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+FROM ${CUDA_IMAGE} AS base
+
+ARG CATVTON_REPO=https://github.com/Zheng-Chong/CatVTON.git
+ARG CATVTON_COMMIT=7818397f25613beedb3d861a34769f607cfcf3b1
+
+ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+       python3 python3-venv python3-pip git ca-certificates libglib2.0-0 libgl1 libgomp1 \
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd --system --create-home --uid 10002 tryon
+
+WORKDIR /srv/tryon
+
+# venv proprio (PEP 668) — o Python do sistema fica intocado.
+RUN python3 -m venv /opt/venv
+ENV PATH=/opt/venv/bin:$PATH
+
+# Dependencias (camada pesada: torch cu128 ~3 GB) antes do codigo.
+COPY apps/tryon/requirements.txt ./requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# CatVTON oficial, commit pinado, sem historico. Licenca: CC BY-NC-SA 4.0 (uso nao comercial).
+RUN git clone --quiet "${CATVTON_REPO}" vendor/CatVTON \
+  && git -C vendor/CatVTON checkout --quiet "${CATVTON_COMMIT}" \
+  && rm -rf vendor/CatVTON/.git \
+  && echo "${CATVTON_COMMIT}" > vendor/CatVTON/.veste-pinned-commit
+
+COPY --chown=tryon:tryon apps/tryon/service ./service
+COPY --chown=tryon:tryon apps/tryon/scripts ./scripts
+
+# Volumes: checkpoints/cache HF e resultados (TTL). Temporarios do DensePose em tmpfs (compose,
+# montado com uid=10002,gid=10002). uid/gid fixos para que volumes/tmpfs tenham dono previsivel.
+RUN groupmod -g 10002 tryon \
+  && mkdir -p /data/models /data/results /tmp/tryon \
+  && chown -R tryon:tryon /data /tmp/tryon /srv/tryon /home/tryon
+VOLUME ["/data/models", "/data/results"]
+
+ENV TRYON_HOST=0.0.0.0 TRYON_PORT=8100 \
+    TRYON_DEVICE=cuda TRYON_PRECISION=bf16 \
+    TRYON_MODEL_PATH=/data/models TRYON_OUTPUT_PATH=/data/results TRYON_TEMP_PATH=/tmp/tryon \
+    TRYON_MAX_CONCURRENT_JOBS=1 \
+    HF_HOME=/data/models HF_HUB_DISABLE_SYMLINKS_WARNING=1 HF_HUB_DISABLE_TELEMETRY=1
+
+USER tryon
+EXPOSE 8100
+
+# Unhealthy ate o modelo estar em GPU (primeira subida inclui download de ~6 GB: start-period longo).
+HEALTHCHECK --interval=20s --timeout=5s --start-period=900s --retries=3 \
+  CMD python -c "import json,sys,urllib.request; b=json.load(urllib.request.urlopen('http://127.0.0.1:8100/health', timeout=4)); sys.exit(0 if b.get('modelLoaded') and b.get('cudaAvailable') else 1)"
+
+CMD ["python", "-m", "uvicorn", "service.main:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "1", "--timeout-keep-alive", "120"]

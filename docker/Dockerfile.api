@@ -1,20 +1,42 @@
-FROM python:3.12-slim
+# syntax=docker/dockerfile:1.7
+# VESTE.AI API (FastAPI + RecommendationEngine). Nao hospeda o CatVTON: fala com o servico
+# `tryon` por HTTP (VESTE_TRYON_URL) quando o profile gpu estiver ativo.
 
+FROM python:3.12-slim AS base
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends libpq5 \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd --system --create-home --uid 10001 veste
 
+# Dependencias primeiro (camada cacheavel); o pacote em si e copiado depois.
 COPY apps/api/pyproject.toml /app/pyproject.toml
-COPY apps/api/app /app/app
-COPY apps/api/alembic /app/alembic
-COPY apps/api/alembic.ini /app/alembic.ini
+RUN mkdir -p /app/app && touch /app/app/__init__.py \
+  && pip install --upgrade pip \
+  && pip install . \
+  && rm -rf /app/app /app/build /app/*.egg-info
 
-RUN pip install --no-cache-dir --upgrade pip \
-  && pip install --no-cache-dir .
+COPY --chown=veste:veste apps/api/app /app/app
+COPY --chown=veste:veste apps/api/alembic /app/alembic
+COPY --chown=veste:veste apps/api/alembic.ini /app/alembic.ini
+COPY --chown=veste:veste docker/api-entrypoint.sh /app/entrypoint.sh
+# Tolerante a checkout com CRLF no Windows.
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
-ENV PYTHONUNBUFFERED=1
+USER veste
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Producao por padrao; o compose de desenvolvimento sobrescreve.
+ENV VESTE_ENVIRONMENT=production \
+    VESTE_LOG_JSON=true \
+    VESTE_AUTO_CREATE_SCHEMA=false \
+    VESTE_RUN_MIGRATIONS=true \
+    VESTE_UVICORN_WORKERS=1 \
+    VESTE_UVICORN_TIMEOUT_KEEP_ALIVE=75
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
+  CMD python -c "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4); sys.exit(0 if r.status==200 else 1)"
+
+ENTRYPOINT ["/app/entrypoint.sh"]

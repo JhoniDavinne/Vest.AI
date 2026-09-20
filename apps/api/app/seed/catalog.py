@@ -4,6 +4,10 @@ As medidas sao geradas a partir de uma base (tamanho de referencia) e de uma
 regra de gradacao por categoria, imitando tabelas tecnicas reais.
 Circunferencias em cm para peito/cintura/quadril; ombro, comprimento, manga e
 largura (abertura/boca) tambem em cm.
+
+`flat_image` (opcional): imagem flat raster da peca em app/assets/flat, usada pelo
+provador com foto (try-on). Os SVGs ilustrativos de `image` nao servem para isso.
+Os JPEGs do seed sao assets de demonstracao gerados por IA (nao sao fotos de produtos reais).
 """
 
 from __future__ import annotations
@@ -62,6 +66,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "elasticity_pct": 5,
             "care": "Lavar à máquina em água fria. Não usar alvejante.",
             "image": "camiseta-essential.svg",
+            "flat_image": "camiseta-essential.jpg",
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 111, "waist": 111, "hip": 107, "shoulder": 45, "length": 71, "sleeve": 21, "width": 55.5},
@@ -112,6 +117,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "elasticity_pct": 2,
             "care": "Passar em temperatura média.",
             "image": "camisa-oxford.svg",
+            "flat_image": "camisa-oxford.jpg",
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 108, "waist": 100, "hip": 106, "shoulder": 45.5, "length": 75, "sleeve": 64, "width": 54},
@@ -237,6 +243,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "elasticity_pct": 4,
             "care": "Lavar à máquina em água fria.",
             "image": "polo-piquet.svg",
+            "flat_image": "polo-piquet.jpg",
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 110, "waist": 106, "hip": 108, "shoulder": 45.5, "length": 72, "sleeve": 22, "width": 55},
@@ -262,6 +269,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "elasticity_pct": 6,
             "care": "Lavar do avesso. Não usar secadora.",
             "image": "moletom-canguru.svg",
+            "flat_image": "moletom-canguru.jpg",
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 128, "waist": 122, "hip": 118, "shoulder": 54, "length": 72, "sleeve": 60, "width": 64},

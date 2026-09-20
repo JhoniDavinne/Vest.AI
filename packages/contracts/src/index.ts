@@ -95,6 +95,10 @@ export interface ProductSummary {
   audience: string;
   description: string;
   image_url: string;
+  /** Imagem flat real da peca (raster) usada pelo provador com foto. Vazio = sem suporte. */
+  flat_image_url: string;
+  /** Derivado no backend: ha imagem flat valida (nao reflete o estado do provider). */
+  tryon_supported: boolean;
   color: string;
   price_cents: number;
   modeling: Modeling;
@@ -126,6 +130,7 @@ export interface ProductCreate {
   audience?: string;
   description?: string;
   image_url?: string;
+  flat_image_url?: string;
   color?: string;
   price_cents?: number;
   modeling: Modeling;
@@ -335,6 +340,54 @@ export interface EngineConfigResponse {
   parameters: Record<string, unknown>;
 }
 
+/** Provador com foto (virtual try-on, experimental). Espelha `apps/api/app/schemas` (TryOn*). */
+export type TryOnStatus = "queued" | "processing" | "completed" | "failed" | "expired";
+
+export interface TryOnAvailability {
+  enabled: boolean;
+  provider: string;
+  available: boolean;
+}
+
+export interface TryOnJob {
+  job_id: string;
+  status: TryOnStatus;
+  analysis_id: string;
+  product_id: string;
+  sku: string;
+  size: string;
+  /** Tamanho recomendado pelo motor — nunca alterado pelo provider de imagem. */
+  recommended_size: string;
+  provider: string;
+  cached: boolean;
+  /** Rota da API (proxy) que entrega a imagem; null enquanto nao `completed`. */
+  image_url: string | null;
+  duration_ms: number | null;
+  error_code: string | null;
+  created_at: string;
+  expires_at: string | null;
+  disclaimer: string;
+  size_note: string;
+}
+
+/** Codigos estaveis de erro do try-on devolvidos pela API em `{ detail, code }`. */
+export type TryOnErrorCode =
+  | "tryon_disabled"
+  | "consent_required"
+  | "invalid_size"
+  | "flat_image_unavailable"
+  | "invalid_photo"
+  | "photo_too_large"
+  | "unsupported_photo_type"
+  | "provider_error"
+  | "provider_unavailable"
+  | "provider_busy"
+  | "provider_timeout"
+  | "provider_out_of_memory"
+  | "provider_rejected_input"
+  | "result_not_found"
+  | "result_expired";
+
 export interface HealthResponse {
   status: string;
   app: string;
@@ -343,6 +396,7 @@ export interface HealthResponse {
   products: number;
   analyses: number;
   vision: { enabled: boolean; mediapipe: boolean; mode: string; note: string };
+  tryon: TryOnAvailability;
 }
 
 /** Rotulos em portugues usados na interface. */

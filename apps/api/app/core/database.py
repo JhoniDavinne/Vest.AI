@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Generator
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -77,6 +77,28 @@ def session_factory() -> sessionmaker[Session]:
         init_engine()
     assert _SessionLocal is not None
     return _SessionLocal
+
+
+def ensure_compat_schema(engine: Engine) -> list[str]:
+    """Complementa `create_all` para bancos criados antes de colunas novas (modo demo/offline).
+
+    `Base.metadata.create_all` cria tabelas novas mas nao adiciona colunas a tabelas existentes.
+    Em PostgreSQL de producao a fonte oficial e o Alembic (apps/api/alembic); aqui so cobrimos
+    o caminho `auto_create_schema` para que a demo nao quebre ao atualizar.
+    """
+    applied: list[str] = []
+    inspector = inspect(engine)
+    if "products" in inspector.get_table_names():
+        columns = {c["name"] for c in inspector.get_columns("products")}
+        if "flat_image_url" not in columns:
+            with engine.begin() as conn:
+                conn.execute(
+                    text("ALTER TABLE products ADD COLUMN flat_image_url VARCHAR(400) NOT NULL DEFAULT ''")
+                )
+            applied.append("products.flat_image_url")
+    if applied:
+        logger.info("Schema complementado (compat): %s", ", ".join(applied))
+    return applied
 
 
 def get_db() -> Generator[Session, None, None]:

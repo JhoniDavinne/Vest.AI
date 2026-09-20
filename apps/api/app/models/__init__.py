@@ -8,6 +8,7 @@ from .entities import (
     PhotoAnalysis,
     Product,
     SKUSize,
+    TryOnJob,
     User,
     UserMeasurement,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "PhotoAnalysis",
     "Product",
     "SKUSize",
+    "TryOnJob",
     "User",
     "UserMeasurement",
 ]

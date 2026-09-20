@@ -1,53 +1,123 @@
+# VESTE.AI — execucao reproduzivel com Docker.
+#
+#   docker compose -f docker/docker-compose.yml up --build                    # postgres + api + web
+#   docker compose -f docker/docker-compose.yml --env-file docker/gpu.env up --build   # + tryon (GPU)
+#
+# O servico `tryon` (CatVTON, GPU NVIDIA) e OPCIONAL (profile `gpu`): sem ele web + api + postgres
+# funcionam normalmente e o provador com foto aparece como desativado/indisponivel.
+# Variaveis interpoladas (${...}) vem do ambiente ou do --env-file; nenhum secret real aqui.
+
 name: veste-ai
 
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: veste
-      POSTGRES_PASSWORD: veste
-      POSTGRES_DB: veste_ai
+      POSTGRES_USER: ${POSTGRES_USER:-veste}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-veste}
+      POSTGRES_DB: ${POSTGRES_DB:-veste_ai}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - veste_pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U veste -d veste_ai"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-veste} -d ${POSTGRES_DB:-veste_ai}"]
       interval: 5s
       timeout: 5s
       retries: 12
+      start_period: 10s
+    restart: unless-stopped
 
   api:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
     environment:
-      VESTE_DATABASE_URL: postgresql+psycopg://veste:veste@db:5432/veste_ai
-      VESTE_ENVIRONMENT: development
-      VESTE_AUTO_CREATE_SCHEMA: "true"
-      VESTE_AUTO_SEED: "true"
-      VESTE_CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
+      VESTE_ENVIRONMENT: ${VESTE_ENVIRONMENT:-development}
+      VESTE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-veste}:${POSTGRES_PASSWORD:-veste}@db:5432/${POSTGRES_DB:-veste_ai}
+      VESTE_DB_WAIT_SECONDS: "60"
+      VESTE_RUN_MIGRATIONS: "true"          # alembic upgrade head (nao destrutivo) no prestart
+      VESTE_AUTO_CREATE_SCHEMA: "false"     # schema vem das migrations
+      VESTE_AUTO_SEED: ${VESTE_AUTO_SEED:-true}
+      VESTE_CORS_ORIGINS: '${VESTE_CORS_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}'
+      VESTE_TRUSTED_HOSTS: '${VESTE_TRUSTED_HOSTS:-["*"]}'
+      VESTE_LOG_JSON: ${VESTE_LOG_JSON:-true}
+      VESTE_UVICORN_WORKERS: ${VESTE_UVICORN_WORKERS:-1}
+      VESTE_DEMO_API_KEY: ${VESTE_DEMO_API_KEY:-veste_demo_key_loja_parceira}
+      # Provador com foto: desativado por padrao; docker/gpu.env liga junto com o profile gpu.
+      VESTE_TRYON_ENABLED: ${VESTE_TRYON_ENABLED:-false}
+      VESTE_TRYON_PROVIDER: catvton
+      VESTE_TRYON_URL: http://tryon:8100
+      VESTE_TRYON_TIMEOUT_S: ${VESTE_TRYON_TIMEOUT_S:-120}
+      VESTE_TRYON_RESULT_TTL_S: ${VESTE_TRYON_RESULT_TTL_S:-900}
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4); sys.exit(0 if r.status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
 
   web:
     build:
       context: ..
       dockerfile: docker/Dockerfile.web
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
-        NEXT_PUBLIC_DEMO_API_KEY: veste_demo_key_loja_parceira
+        # Inlined no bundle do browser: URL publica da API vista pelo navegador.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_DEMO_API_KEY: ${VESTE_DEMO_API_KEY:-veste_demo_key_loja_parceira}
     environment:
-      API_URL: http://api:8000
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_DEMO_API_KEY: veste_demo_key_loja_parceira
+      NODE_ENV: production
+      API_URL: http://api:8000                       # usado no servidor Next (RSC)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ GPU (opcional)
+  tryon:
+    profiles: ["gpu"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.tryon
+    environment:
+      TRYON_PRECISION: ${TRYON_PRECISION:-bf16}
+      TRYON_MAX_CONCURRENT_JOBS: "1"         # uma GPU local: uma inferencia por vez (~37 s)
+      TRYON_QUEUE_WAIT_SECONDS: ${TRYON_QUEUE_WAIT_SECONDS:-0}
+      TRYON_RESULT_TTL_SECONDS: ${VESTE_TRYON_RESULT_TTL_S:-900}
+      TRYON_MAX_UPLOAD_MB: "8"
+    ports:
+      - "${TRYON_PORT:-8100}:8100"           # exposto so para diagnostico local; o frontend nunca usa
+    volumes:
+      - veste_hf_cache:/data/models          # checkpoints/cache HuggingFace (~6 GB), fora da imagem
+      - veste_tryon_results:/data/results    # PNGs gerados, com TTL (nunca a foto da pessoa)
+    tmpfs:
+      # Temporarios do DensePose: memoria, nunca disco. uid/gid do usuario `tryon` da imagem (10002:10002).
+      - /tmp/tryon:uid=10002,gid=10002,mode=1770,size=512m
+    gpus: all
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,sys,urllib.request; b=json.load(urllib.request.urlopen('http://127.0.0.1:8100/health', timeout=4)); sys.exit(0 if b.get('modelLoaded') and b.get('cudaAvailable') else 1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 900s                     # primeira subida baixa ~6 GB de checkpoints
+    restart: unless-stopped
 
 volumes:
   veste_pg:
+  veste_hf_cache:
+  veste_tryon_results:

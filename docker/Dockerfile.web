@@ -1,25 +1,68 @@
-FROM node:20-alpine
+# syntax=docker/dockerfile:1.7
+# VESTE.AI web (Next.js 16) — build multi-stage do monorepo npm workspaces.
+#
+# Etapa deps: copia SOMENTE os package.json de todos os workspaces usados pelo web
+# (apps/web + packages/contracts, ui, widget, fit-preview-3d) antes do `npm ci`, para que
+# o lockfile resolva os links de workspace e a camada de dependencias seja cacheavel.
+# Etapa build: `next build` com output standalone (server.js autocontido).
+# Etapa runner: imagem enxuta, usuario nao-root, healthcheck HTTP.
 
+ARG NODE_VERSION=20
+
+# ------------------------------------------------------------------ deps
+FROM node:${NODE_VERSION}-alpine AS deps
 WORKDIR /repo
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false NPM_CONFIG_FUND=false
 
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/widget/package.json packages/widget/package.json
+COPY packages/fit-preview-3d/package.json packages/fit-preview-3d/package.json
 
-RUN npm ci
+RUN npm ci --no-audit
 
+# ------------------------------------------------------------------ build
+FROM node:${NODE_VERSION}-alpine AS build
+WORKDIR /repo
+ENV NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production
+
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/package.json ./package.json
 COPY apps/web apps/web
-COPY packages packages
+COPY packages/contracts packages/contracts
+COPY packages/ui packages/ui
+COPY packages/widget packages/widget
+COPY packages/fit-preview-3d packages/fit-preview-3d
 
+# Variaveis publicas sao inlined no bundle do browser em tempo de build.
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ARG NEXT_PUBLIC_DEMO_API_KEY=veste_demo_key_loja_parceira
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_DEMO_API_KEY=$NEXT_PUBLIC_DEMO_API_KEY
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT=standalone
 
 RUN npm run build --workspace apps/web
 
+# ------------------------------------------------------------------ runner
+FROM node:${NODE_VERSION}-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+
+RUN addgroup -S nextjs && adduser -S nextjs -G nextjs \
+  && apk add --no-cache wget
+
+# Saida standalone do Next: server.js + node_modules minimos (com os workspaces linkados).
+COPY --from=build --chown=nextjs:nextjs /repo/apps/web/.next/standalone ./
+COPY --from=build --chown=nextjs:nextjs /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=nextjs:nextjs /repo/apps/web/public ./apps/web/public
+
+USER nextjs
 EXPOSE 3000
-CMD ["npm", "run", "start", "--workspace", "apps/web", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
+  CMD wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1
+
+# Em monorepo o standalone preserva a estrutura apps/web/server.js.
+CMD ["node", "apps/web/server.js"]

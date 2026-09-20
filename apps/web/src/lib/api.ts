@@ -20,6 +20,8 @@ import type {
   RecommendationRequest,
   RecommendationResponse,
   Size,
+  TryOnAvailability,
+  TryOnJob,
   User,
   UserCreate,
 } from "@veste-ai/contracts";
@@ -38,9 +40,35 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    /** Codigo estavel opcional (ex.: erros do provador com foto: `provider_busy`). */
+    public readonly code: string | null = null,
+    public readonly retryAfterSeconds: number | null = null,
   ) {
     super(message);
   }
+}
+
+/** Extrai `{ detail, code, retry_after_seconds }` de um corpo de erro da API (string ou JSON). */
+export function parseApiError(status: number, rawBody: string | null): ApiError {
+  let detail = `Erro ${status}`;
+  let code: string | null = null;
+  let retryAfter: number | null = null;
+  if (rawBody) {
+    try {
+      const body = JSON.parse(rawBody) as { detail?: unknown; code?: unknown; retry_after_seconds?: unknown };
+      if (typeof body.detail === "string") detail = body.detail;
+      else if (Array.isArray(body.detail)) {
+        detail = body.detail
+          .map((d: { msg?: string; loc?: unknown[] }) => `${(d.loc ?? []).slice(-1)[0] ?? ""}: ${d.msg ?? ""}`)
+          .join("; ");
+      }
+      if (typeof body.code === "string") code = body.code;
+      if (typeof body.retry_after_seconds === "number") retryAfter = body.retry_after_seconds;
+    } catch {
+      /* corpo nao-JSON */
+    }
+  }
+  return new ApiError(detail, status, code, retryAfter);
 }
 
 async function request<T>(path: string, init: RequestInit = {}, options: { apiKey?: string } = {}): Promise<T> {
@@ -56,21 +84,43 @@ async function request<T>(path: string, init: RequestInit = {}, options: { apiKe
     cache: "no-store",
   });
   if (!response.ok) {
-    let detail = `Erro ${response.status}`;
+    let raw: string | null = null;
     try {
-      const body = (await response.json()) as { detail?: unknown };
-      if (typeof body.detail === "string") detail = body.detail;
-      else if (Array.isArray(body.detail)) {
-        detail = body.detail
-          .map((d: { msg?: string; loc?: unknown[] }) => `${(d.loc ?? []).slice(-1)[0] ?? ""}: ${d.msg ?? ""}`)
-          .join("; ");
-      }
+      raw = await response.text();
     } catch {
-      /* corpo nao-JSON */
+      /* sem corpo */
     }
-    throw new ApiError(detail, response.status);
+    throw parseApiError(response.status, raw);
   }
   return (await response.json()) as T;
+}
+
+/**
+ * Upload multipart com callback de fim de envio (XMLHttpRequest): permite distinguir
+ * "Enviando foto..." de "Gerando sua visualizacao..." enquanto a v1 do try-on e sincrona.
+ */
+function upload<T>(path: string, form: FormData, options: { onUploaded?: () => void; signal?: AbortSignal } = {}): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${apiBaseUrl()}${API_V1_PREFIX}${path}`);
+    xhr.responseType = "text";
+    xhr.upload.onload = () => options.onUploaded?.();
+    xhr.onerror = () => reject(new ApiError("Não foi possível conectar à API.", 0, "network_error"));
+    xhr.onabort = () => reject(new ApiError("Envio cancelado.", 0, "aborted"));
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as T);
+        } catch {
+          reject(new ApiError("Resposta inválida da API.", xhr.status));
+        }
+      } else {
+        reject(parseApiError(xhr.status, xhr.responseText));
+      }
+    };
+    options.signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+    xhr.send(form);
+  });
 }
 
 export const api = {
@@ -106,6 +156,27 @@ export const api = {
     request<RecommendationResponse>(`/recommendations/${analysisId}${size ? `?size=${encodeURIComponent(size)}` : ""}`),
   feedback: (payload: FeedbackCreate) => request<Feedback>("/feedback", { method: "POST", body: JSON.stringify(payload) }),
   engineConfig: () => request<EngineConfigResponse>("/engine/config"),
+
+  // Provador com foto (experimental). O frontend NUNCA chama o provider (apps/tryon) diretamente:
+  // tudo passa pela API principal, que valida consentimento/analise/peca e faz proxy da imagem.
+  tryOnStatus: () => request<TryOnAvailability>("/tryon/status"),
+  tryOn: (
+    payload: { analysisId: string; size?: string; photo: File; consentTryOn: boolean },
+    options: { onUploaded?: () => void; signal?: AbortSignal } = {},
+  ) => {
+    const form = new FormData();
+    // Nome de arquivo fixo: o nome original da foto nao e enviado.
+    form.append("person", payload.photo, "photo");
+    form.append("analysis_id", payload.analysisId);
+    form.append("consent_tryon", String(payload.consentTryOn));
+    if (payload.size) form.append("size", payload.size);
+    return upload<TryOnJob>("/tryon", form, options);
+  },
+  tryOnJob: (jobId: string) => request<TryOnJob>(`/tryon/${encodeURIComponent(jobId)}`),
+  /** URL absoluta da imagem gerada (proxy da API; expira). */
+  tryOnImageUrl: (job: TryOnJob) => (job.image_url ? `${apiBaseUrl()}${job.image_url}` : null),
+  deleteTryOn: (jobId: string) =>
+    fetch(`${apiBaseUrl()}${API_V1_PREFIX}/tryon/${encodeURIComponent(jobId)}`, { method: "DELETE" }).then(() => undefined),
 
   // B2B
   companyDashboard: (apiKey: string) => request<CompanyDashboard>("/companies/me", {}, { apiKey }),

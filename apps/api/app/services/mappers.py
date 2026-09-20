@@ -100,6 +100,8 @@ def product_to_summary(product: Product) -> ProductSummary:
         audience=product.audience,
         description=product.description,
         image_url=product.image_url,
+        flat_image_url=product.flat_image_url or "",
+        tryon_supported=bool(product.flat_image_url),
         color=product.color,
         price_cents=product.price_cents,
         modeling=product.modeling,

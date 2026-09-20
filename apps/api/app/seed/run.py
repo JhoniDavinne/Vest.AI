@@ -75,8 +75,13 @@ def seed_demo_user(db: Session) -> User:
 def seed_catalog(db: Session, company: Company) -> list[Product]:
     products: list[Product] = []
     for item in build_catalog():
+        flat_image_url = f"/assets/flat/{item['flat_image']}" if item.get("flat_image") else ""
         existing = db.scalars(select(Product).where(Product.slug == item["slug"])).first()
         if existing:
+            # Backfill idempotente: produtos criados antes do try-on recebem a imagem flat do seed.
+            if flat_image_url and not existing.flat_image_url:
+                existing.flat_image_url = flat_image_url
+                db.commit()
             products.append(existing)
             continue
         product = Product(
@@ -88,6 +93,7 @@ def seed_catalog(db: Session, company: Company) -> list[Product]:
             audience=item["audience"],
             description=item["description"],
             image_url=f"/products/{item['image']}",
+            flat_image_url=flat_image_url,
             color=item["color"],
             price_cents=item["price_cents"],
             modeling=item["modeling"],
@@ -198,6 +204,21 @@ def run_seed(reset: bool = False) -> dict[str, int]:
         products = seed_catalog(db, company)
         analyses = seed_simulated_analyses(db, company, products, SIMULATED_ANALYSES)
         return {"products": len(products), "simulated_analyses": analyses}
+
+
+def backfill_flat_images() -> int:
+    """Preenche Product.flat_image_url dos produtos do seed ja existentes (idempotente)."""
+    updated = 0
+    with session_factory()() as db:
+        for item in build_catalog():
+            if not item.get("flat_image"):
+                continue
+            product = db.scalars(select(Product).where(Product.slug == item["slug"])).first()
+            if product is not None and not product.flat_image_url:
+                product.flat_image_url = f"/assets/flat/{item['flat_image']}"
+                updated += 1
+        db.commit()
+    return updated
 
 
 def database_is_empty() -> bool:

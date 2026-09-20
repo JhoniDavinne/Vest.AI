@@ -77,6 +77,7 @@ def create_product(db: Session, payload: ProductCreate, company_id: str | None) 
         audience=payload.audience,
         description=payload.description,
         image_url=payload.image_url or f"/products/placeholder-{payload.category}.svg",
+        flat_image_url=payload.flat_image_url or "",
         color=payload.color,
         price_cents=payload.price_cents,
         modeling=payload.modeling,

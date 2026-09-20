@@ -4,11 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Braces, ChevronRight, Info, MessageSquareHeart, RotateCcw, Sparkles, X } from "lucide-react";
-import type { Product, RecommendationResponse } from "@veste-ai/contracts";
+import type { Product, RecommendationResponse, TryOnAvailability } from "@veste-ai/contracts";
 import { FIT_PREFERENCE_LABEL, MODELING_LABEL } from "@veste-ai/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useProfile } from "@/lib/profile";
 import { cn } from "@/lib/utils";
+import { initialTryOnState, msUntilExpiry, tryOnReducer } from "@/lib/tryon";
+import { TryOnPanel } from "./tryon-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -54,6 +56,11 @@ export function ResultView({ analysisId }: { analysisId: string }) {
   const [showJson, setShowJson] = React.useState(false);
   const [feedbackSent, setFeedbackSent] = React.useState<string | null>(null);
 
+  // Provador com foto (experimental): estado local; nunca altera `base` (recomendacao do motor).
+  const [tryOn, dispatchTryOn] = React.useReducer(tryOnReducer, initialTryOnState);
+  const [tryOnAvailability, setTryOnAvailability] = React.useState<TryOnAvailability | null>(null);
+  const tryOnAbort = React.useRef<AbortController | null>(null);
+
   React.useEffect(() => {
     api
       .getRecommendation(analysisId)
@@ -65,6 +72,25 @@ export function ResultView({ analysisId }: { analysisId: string }) {
       })
       .catch((err) => setLoadError(err instanceof ApiError ? err.message : "Não foi possível carregar a análise."));
   }, [analysisId]);
+
+  // Disponibilidade do try-on vem da API principal (que consulta o provider); o frontend nao fala com apps/tryon.
+  React.useEffect(() => {
+    api
+      .tryOnStatus()
+      .then(setTryOnAvailability)
+      .catch(() => setTryOnAvailability({ enabled: false, provider: "", available: false }));
+  }, []);
+
+  // Resultado com TTL: ao expirar, o painel volta para "expired" e pede nova geracao.
+  React.useEffect(() => {
+    if (tryOn.phase !== "completed") return;
+    const ms = msUntilExpiry(tryOn.job);
+    if (ms == null) return;
+    const timer = window.setTimeout(() => dispatchTryOn({ type: "expired" }), ms);
+    return () => window.clearTimeout(timer);
+  }, [tryOn.phase, tryOn.job]);
+
+  React.useEffect(() => () => tryOnAbort.current?.abort(), []);
 
   // Estado visual do tamanho selecionado: comparison (sem HTTP) -> resposta detalhada -> null.
   const selection = React.useMemo(
@@ -139,6 +165,29 @@ export function ResultView({ analysisId }: { analysisId: string }) {
     },
     [base, selectedSize, detailBySize, fetchDetail],
   );
+
+  const submitTryOn = React.useCallback(async () => {
+    if (!base?.analysis_id || !tryOn.file || !tryOn.consent || !selectedSize) {
+      dispatchTryOn({ type: "submit" }); // reducer devolve consent_required / mensagem adequada
+      return;
+    }
+    dispatchTryOn({ type: "submit" });
+    const controller = new AbortController();
+    tryOnAbort.current = controller;
+    try {
+      // O tamanho enviado e a selecao valida do usuario (ou o recomendado): o provider nao escolhe tamanho.
+      const job = await api.tryOn(
+        { analysisId: base.analysis_id, size: selectedSize, photo: tryOn.file, consentTryOn: true },
+        { onUploaded: () => dispatchTryOn({ type: "uploaded" }), signal: controller.signal },
+      );
+      dispatchTryOn({ type: "completed", job });
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "aborted") return;
+      dispatchTryOn({ type: "failed", error: err });
+    } finally {
+      tryOnAbort.current = null;
+    }
+  }, [base, tryOn.file, tryOn.consent, selectedSize]);
 
   async function sendFeedback(rating: "too_tight" | "good" | "too_loose") {
     if (!base?.analysis_id) return;
@@ -400,6 +449,30 @@ export function ResultView({ analysisId }: { analysisId: string }) {
           </div>
         </div>
       </section>
+
+      {/* PROVADOR COM FOTO (experimental) — representacao visual; nao altera a recomendacao */}
+      {tryOnAvailability?.enabled ? (
+        <TryOnPanel
+          state={tryOn}
+          size={selectedSize}
+          recommendedSize={recommendedSize}
+          productSupported={Boolean(product?.tryon_supported)}
+          providerEnabled={tryOnAvailability.enabled}
+          providerAvailable={tryOnAvailability.available}
+          imageUrl={tryOn.job ? api.tryOnImageUrl(tryOn.job) : null}
+          onOpen={() => dispatchTryOn({ type: "open" })}
+          onConsentChange={(value) => dispatchTryOn({ type: "set_consent", value })}
+          onPickFile={(file) => dispatchTryOn({ type: "pick_file", file })}
+          onSubmit={() => void submitTryOn()}
+          onReset={() => {
+            tryOnAbort.current?.abort();
+            dispatchTryOn({ type: "reset" });
+            // Revalida a disponibilidade ao tentar novamente apos indisponibilidade.
+            api.tryOnStatus().then(setTryOnAvailability).catch(() => undefined);
+          }}
+          onImageError={() => dispatchTryOn({ type: "expired" })}
+        />
+      ) : null}
 
       {/* DETALHE TECNICO POR REGIAO */}
       {displayRegions.length > 0 ? (

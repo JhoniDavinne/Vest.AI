@@ -4,16 +4,17 @@ Consumer:  User, UserMeasurement, PhotoAnalysis
 Product:   Product, SKUSize, GarmentMeasurement
 Recomend.: FitAnalysis, Feedback
 B2B:       Company, IntegrationKey
+Try-on:    TryOnJob (somente metadados)
 """
 
 from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, IdMixin, TimestampMixin
+from .base import Base, IdMixin, TimestampMixin, utcnow
 
 
 # --------------------------------------------------------------------------- #
@@ -112,6 +113,9 @@ class Product(IdMixin, TimestampMixin, Base):
     audience: Mapped[str] = mapped_column(String(24), default="unissex")
     description: Mapped[str] = mapped_column(Text, default="")
     image_url: Mapped[str] = mapped_column(String(400), default="")
+    # Imagem flat real da peca (raster, fundo neutro) usada pelo provador com foto (try-on).
+    # Vazio = try-on indisponivel para o produto. Caminho interno (/assets/flat/...) ou URL permitida.
+    flat_image_url: Mapped[str] = mapped_column(String(400), default="", server_default="")
     color: Mapped[str] = mapped_column(String(40), default="")
     price_cents: Mapped[int] = mapped_column(Integer, default=0)
     modeling: Mapped[str] = mapped_column(String(24), nullable=False)
@@ -203,3 +207,34 @@ class Feedback(IdMixin, TimestampMixin, Base):
     comment: Mapped[str | None] = mapped_column(Text)
 
     analysis: Mapped[FitAnalysis] = relationship(back_populates="feedback")
+
+
+# --------------------------------------------------------------------------- #
+# Virtual try-on (provador com foto)
+# --------------------------------------------------------------------------- #
+class TryOnJob(IdMixin, TimestampMixin, Base):
+    """SOMENTE metadados do job de try-on.
+
+    Nunca armazena a foto da pessoa, bytes, base64 nem a imagem gerada: o resultado fica no
+    provider (apps/tryon) com TTL e e referenciado por `result_ref`. `cache_key` e um digest
+    composto (foto + peca + sku + provider + versao do modelo), nao reversivel a foto.
+    """
+
+    __tablename__ = "tryon_jobs"
+
+    analysis_id: Mapped[str] = mapped_column(ForeignKey("fit_analyses.id"), nullable=False, index=True)
+    product_id: Mapped[str] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
+    sku: Mapped[str] = mapped_column(String(80), nullable=False)
+    size: Mapped[str] = mapped_column(String(12), nullable=False)
+    cloth_type: Mapped[str] = mapped_column(String(16), nullable=False)  # upper | lower | overall
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(80), default="")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued", index=True)
+    # queued | processing | completed | failed | expired
+    consent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    cache_key: Mapped[str | None] = mapped_column(String(64), index=True)
+    result_ref: Mapped[str | None] = mapped_column(String(80))
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    error_code: Mapped[str | None] = mapped_column(String(48))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

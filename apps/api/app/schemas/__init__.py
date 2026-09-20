@@ -109,6 +109,11 @@ class ProductCreate(BaseModel):
     audience: str = "unissex"
     description: str = ""
     image_url: str = ""
+    flat_image_url: str = Field(
+        default="",
+        max_length=400,
+        description="Imagem flat real da peca para o provador com foto (caminho /assets/flat/* ou URL permitida)",
+    )
     color: str = ""
     price_cents: int = 0
     modeling: ModelingLiteral
@@ -129,6 +134,9 @@ class ProductSummary(BaseModel):
     audience: str
     description: str
     image_url: str
+    flat_image_url: str = ""
+    # Derivado: ha imagem flat valida para o provador com foto (nao considera o estado do provider).
+    tryon_supported: bool = False
     color: str
     price_cents: int
     modeling: str
@@ -312,6 +320,49 @@ class CompanyDashboard(BaseModel):
     analyses_count: int
     api_calls_count: int
     widget_calls_count: int
+
+
+# --------------------------------------------------------------------------- #
+# Provador com foto (virtual try-on) — contrato normalizado, independente do provider
+# --------------------------------------------------------------------------- #
+TryOnStatusLiteral = Literal["queued", "processing", "completed", "failed", "expired"]
+
+TRYON_DISCLAIMER = "Visualização gerada por IA. O caimento real pode apresentar diferenças."
+TRYON_SIZE_NOTE = (
+    "A recomendação de tamanho é baseada nas medidas e nos dados técnicos da peça, "
+    "não na imagem gerada."
+)
+
+
+class TryOnJobOut(BaseModel):
+    job_id: str
+    status: TryOnStatusLiteral
+    analysis_id: str
+    product_id: str
+    sku: str
+    size: str
+    recommended_size: str
+    provider: str
+    cached: bool = False
+    image_url: str | None = Field(default=None, description="Rota da API que entrega a imagem (proxy)")
+    duration_ms: int | None = None
+    error_code: str | None = None
+    created_at: datetime
+    expires_at: datetime | None
+    disclaimer: str = TRYON_DISCLAIMER
+    size_note: str = TRYON_SIZE_NOTE
+
+
+class TryOnStatusOut(BaseModel):
+    enabled: bool
+    provider: str
+    available: bool
+
+
+class TryOnErrorOut(BaseModel):
+    detail: str
+    code: str
+    retry_after_seconds: int | None = None
 
 
 # --------------------------------------------------------------------------- #

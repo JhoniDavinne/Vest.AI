@@ -18,7 +18,7 @@ Monorepo npm workspaces + app Python independente.
 | Contratos | `packages/contracts/src/index.ts` | Tipos TS espelhando `apps/api/app/schemas/__init__.py` |
 | 3D (v1) | `packages/fit-preview-3d` | `three@0.175`, `@react-three/fiber@9.7`, `@react-three/drei@10.7` |
 | Widget | `packages/widget` | `<VesteFit />`, build tsup esm+iife, consome `fit-preview-3d` |
-| Infra | `docker/docker-compose.yml`, `docker/Dockerfile.api`, `docker/Dockerfile.web`, `.github/workflows/ci.yml` | Postgres 16 + api + web |
+| Infra | `docker/docker-compose.yml`, `docker/Dockerfile.api`, `docker/Dockerfile.web`, `docker/Dockerfile.tryon`, `docker/gpu.env`, `.github/workflows/ci.yml` | Postgres 16 + api + web (+ `tryon` GPU via profile `gpu`) — Etapa 7 |
 
 Fluxo: `Web / Widget → POST /api/v1/recommendations → recommendation_service → RecommendationEngine → fit_analyses`.
 
@@ -199,14 +199,21 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 - Serviço FastAPI (`apps/tryon/service/`): `GET /health`, `POST /try-on` (multipart `person`, `garment`, `cloth_type`), `GET|DELETE /results/{id}`; `CatVTONRuntime` carrega o modelo uma vez e recusa CPU; `MAX_CONCURRENT_JOBS=1` (429 `busy`); OOM controlado (503); validação de imagens; foto só em memória, temporários removidos, resultados com TTL.
 - Medições na RTX 5070 (768×1024, bf16, 50 passos): ≈36 s por imagem, pico 5,0 GB alocados / 7,1 GB reservados, 3,2 GB após load.
 
-Ponto arquitetural da **próxima etapa** (Integração VESTE.AI ↔ CatVTON) — `apps/api` (Python ≥ 3.11) não hospeda o modelo; conversa com `apps/tryon` por HTTP:
+**Etapa 6 concluída — integração VESTE.AI ↔ CatVTON** (ver `docs/implementation/ETAPA_06_CATVTON_INTEGRATION.md`). `apps/api` (Python ≥ 3.11) não hospeda o modelo; atua como adaptador HTTP para `apps/tryon`:
 
-- Integração na API principal: `apps/api/app/api/v1/routes/tryon.py` + `apps/api/app/services/tryon_service.py` — `POST /api/v1/tryon` (foto + `analysis_id` + consentimento VTO explícito) → job assíncrono → `GET /api/v1/tryon/{job_id}`. Persistir apenas metadados (`TryOnJob`), nunca a imagem da pessoa, mantendo a política atual de `apps/api/app/services/photo_service.py`.
-- O VTO renderiza o SKU já recomendado pelo motor; **não altera** score, confiança ou justificativas.
-- Pré-requisitos de dados: `Product.flat_image_url` (imagem flat real da peça; os SVGs em `apps/web/public/products/` não servem).
-- Frontend: nova seção em `apps/web/src/components/fit/result-view.tsx`, reutilizando o padrão de `apps/web/src/components/consumer/photo-upload.tsx`. Fora do widget na v1.
-- Flags/env: `VESTE_TRYON_ENABLED`, `VESTE_TRYON_URL`, `VESTE_TRYON_TIMEOUT_S`, `VESTE_TRYON_RESULT_TTL_S`; expor em `GET /api/v1/health`.
-- Licença dos pesos: uso não comercial (adequado ao TCC; documentar).
+```text
+result-view.tsx → POST /api/v1/tryon → services/tryon/service.py → VirtualTryOnProvider → CatVTONProvider → apps/tryon
+                ← TryOnJobOut (metadados) ← TryOnJob (PostgreSQL/SQLite)        ← resultId (PNG com TTL no provider)
+                ← GET /api/v1/tryon/{job_id}/image (proxy)
+```
+
+- Provider abstrato `apps/api/app/services/tryon/provider.py` (`health/submit/result_exists/fetch_result/delete_result`) + `catvton_provider.py` (httpx, tradução de erros: offline→`provider_unavailable`, timeout→`provider_timeout`, 429→`provider_busy`, OOM→`provider_out_of_memory`, imagem→`provider_rejected_input`). Selecionado por `VESTE_TRYON_PROVIDER`.
+- Endpoints: `GET /tryon/status`, `POST /tryon` (multipart `person`, `analysis_id`, `consent_tryon`, `size?`), `GET /tryon/{job_id}`, `GET /tryon/{job_id}/image`, `DELETE /tryon/{job_id}`; `GET /health` ganhou `tryon: {enabled, provider, available}`.
+- Dados: `Product.flat_image_url` (+ `tryon_supported` derivado; assets internos em `apps/api/app/assets/flat`, allowlist para URLs remotas; usuário nunca envia URL de peça) e `TryOnJob` só com metadados (`cache_key` = digest composto, `result_ref` opaco). Migration `0002_tryon.py`; compat automática em modo demo (`ensure_compat_schema` + `backfill_flat_images`).
+- Regras: consentimento específico `consent_tryon=true` (não reutiliza o da análise corporal); tamanho = recomendado pelo motor ou seleção válida do usuário — **o provider nunca escolhe tamanho, score ou confiança**; foto só em memória; cache determinístico (foto+peça+sku+tamanho+provider+model_version) reaproveita o PNG enquanto o TTL durar.
+- Frontend: seção "Provador com foto · Experimental" em `result-view.tsx` (`lib/tryon.ts` máquina de estados + `fit/tryon-panel.tsx`), estados idle/consent_required/uploading/processing/completed/failed/provider_unavailable/expired, disclaimer "Visualização gerada por IA…" + nota de que a recomendação vem das medidas. Falha do provider mantém a recomendação visível. Widget não alterado.
+- Medido: 37,6 s por geração via API principal (RTX 5070), cache hit 0,03 s; 67 testes API + 36 web.
+- Licença dos pesos: CC BY-NC-SA 4.0, uso não comercial (herdada pela feature).
 
 ---
 
@@ -226,7 +233,8 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 
 # Riscos
 
-- `docker/Dockerfile.web` não copia `packages/fit-preview-3d/package.json` antes do `npm ci` → build Docker do web tende a falhar.
+- ~~`docker/Dockerfile.web` não copia `packages/fit-preview-3d/package.json` antes do `npm ci` → build Docker do web tende a falhar.~~ Corrigido na Etapa 7 (multi-stage com todos os workspaces, standalone; build validado).
+- Imagem `tryon` com ≈20 GB (CUDA + torch cu128); try-on síncrono (`MAX_CONCURRENT_JOBS=1`) — fila assíncrona necessária antes de produção multiusuário.
 - ~~`apps/web/next.config.ts` não inclui `@veste-ai/fit-preview-3d` em `transpilePackages`.~~ Corrigido na Etapa 2.
 - `npm run lint:web` falha com 8 erros `react-hooks/set-state-in-effect` pré-existentes em `apps/web/src/**` (ex.: `src/lib/profile.tsx`) — fora do escopo do 3D, mas bloqueia um gate de CI futuro.
 - `.github/workflows/ci.yml` não roda typecheck/lint/test do web nem testes do `fit-preview-3d`.
@@ -237,7 +245,9 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - GLBs reais em `apps/web/public/models` afetam LCP da PDP → Draco/meshopt, preload tardio, `dpr` adaptativo.
 - Sem autenticação de consumidor (`GET /users/{id}` aberto; `userId` em `localStorage`) → bloqueador antes de qualquer feature que gere imagem da pessoa (VTO).
 - ~~Python local 3.14 vs API ≥ 3.11 vs CatVTON 3.9 → isolamento obrigatório do serviço VTO.~~ Resolvido na Etapa 5: `apps/tryon/.venv` com Python 3.12 dedicado; pins oficiais do CatVTON são internamente inconsistentes (peft ↔ accelerate) e `torch 2.4` não suporta RTX 50 — desvios documentados.
-- CatVTON ≈ 36 s por imagem na RTX 5070 (WDDM, GPU compartilhada) — exigirá processamento assíncrono/fila na integração com a API.
+- CatVTON ≈ 36–38 s por imagem na RTX 5070 (WDDM, GPU compartilhada). A Etapa 6 integrou de forma **síncrona** (requisição aberta durante a geração, `provider_busy` para o segundo usuário simultâneo); fila assíncrona + polling ficam para a etapa de deployment.
+- Try-on sem autenticação de consumidor: qualquer portador de `analysis_id` pode gerar a visualização daquela análise (foto só em memória, mas o acesso ao resultado depende do `job_id`). Bloqueador antes de ambiente compartilhado.
+- Imagens flat do seed são geradas por IA (demo); catálogo real exige fotos flat dos produtos (`Product.flat_image_url`).
 - Pasta órfã `veste-ai/apps/api/veste_ai.db` na raiz (remover).
 
 ---
@@ -249,6 +259,7 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - [x] Integração com motor de caimento — **concluída (Etapa 3)**: `SizeComparison.regions` propagado do motor, `FitVisualizationState` (`fitVisualization.ts`), overlay por `status/deviation/score`, `SizeSelector3D` + `FitLegend`, troca de tamanho sem HTTP e `recommendedSize × selectedPreviewSize` em `result-view.tsx`. Ver `docs/implementation/ETAPA_03_FIT_INTEGRATION.md`
 - [x] UX do provador — **concluída (Etapa 4)**: layout desktop 2 colunas / mobile ordenado, recomendado × visualizado explícito, seletor acessível (teclado, focus-visible, loading/disabled), controles Frente/Lateral/Costas/±/Reset, legenda de vestibilidade, estados loading/erro/fallback padronizados, `GET /recommendations/{id}?size=` para consistência de dados. Ver `docs/implementation/ETAPA_04_UX_PROVADOR.md`
 - [x] CatVTON local — **concluída (Etapa 5)**: `apps/tryon/` isolado (Python 3.12, torch 2.7.1+cu128), CatVTON oficial pinado, inferência real na RTX 5070 (bf16, 768×1024, ≈36 s), serviço FastAPI `/health` + `/try-on` + `/results`, modelo carregado uma vez, concorrência/OOM controlados, 14 testes unitários + integração. Ver `docs/implementation/ETAPA_05_CATVTON_LOCAL.md`
-- [ ] Integração CatVTON — não iniciada (depende da Etapa 5): `routes/tryon.py`, `tryon_service.py`, `TryOnJob`, `flat_image_url`, seção em `result-view.tsx`
-- [ ] Docker — corrigir `Dockerfile.web`, `transpilePackages`, perfil GPU no compose, CI completa
+- [x] Integração CatVTON — **concluída (Etapa 6)**: `services/tryon/` (provider abstrato + `CatVTONProvider`), `routes/tryon.py`, `TryOnJob` (metadados), `Product.flat_image_url` + assets flat, consentimento específico, cache determinístico, `health.tryon`, seção "Provador com foto · Experimental" em `result-view.tsx`, E2E real com CatVTON na RTX 5070. Ver `docs/implementation/ETAPA_06_CATVTON_INTEGRATION.md`
+- [x] Docker / preparação para deployment — **concluída (Etapa 7)**: `Dockerfile.web` corrigido (multi-stage, standalone), `Dockerfile.api` com prestart (wait DB + Alembic não destrutivo, logs JSON, CORS/trusted hosts por ambiente), `Dockerfile.tryon` (CUDA 12.8, torch cu128, CatVTON pinado, checkpoints em volume), compose com healthchecks encadeados e profile `gpu` (`docker/gpu.env`, `VESTE_TRYON_URL=http://tryon:8100`), GPU validada no container (RTX 5070, geração real em 25,8 s). Ver `docs/implementation/ETAPA_07_DOCKER_DEPLOYMENT.md`
+- [ ] Cloud / CI — registry e build das imagens na CI, fila assíncrona para o try-on, secrets, TLS/reverse proxy, autenticação de consumidor (sem escolha de provedor ainda)
 - [ ] Testes finais — unitários do pacote 3D, `test_api.py` para novos schemas, E2E de fallback (WebGL off / GPU off / timeout)
