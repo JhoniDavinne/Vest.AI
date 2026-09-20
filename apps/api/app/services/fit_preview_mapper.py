@@ -41,6 +41,8 @@ def build_fit_preview(
             "category": product.category,
             "color": product.color or "",
             "modeling": product.modeling,
+            "fabric": product.fabric or product.composition or "",
+            "elasticity_pct": product.elasticity_pct,
             "evaluatedSize": sku.size_label,
             "measurements": {
                 "chest": m.chest if m else None,

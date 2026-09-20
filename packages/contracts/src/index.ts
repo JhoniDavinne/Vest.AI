@@ -180,6 +180,10 @@ export interface FitPreviewGarmentPayload {
   category: Category;
   color: string;
   modeling: Modeling;
+  /** Tecido da peca (usado apenas para aparencia do material 3D). */
+  fabric?: string;
+  /** Elasticidade heuristica (%); apenas aparencia, o caimento vem de `regions`. */
+  elasticity_pct?: number | null;
   evaluatedSize: string;
   measurements: GarmentMeasurement;
 }

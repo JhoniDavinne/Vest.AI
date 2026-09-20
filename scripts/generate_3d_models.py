@@ -150,11 +150,31 @@ def main() -> None:
     _write_glb(MODELS / "body" / "base-male.glb", BODY_PARTS)
     for category, (translation, scale) in GARMENT_SHAPES.items():
         _write_glb(MODELS / "garments" / f"{category}.glb", [(category, translation, scale)])
+    # Manifest v2 (ver packages/fit-preview-3d/src/manifest.ts). Assets gerados aqui
+    # sao SEMPRE placeholder: o provador exibe a silhueta estilizada enquanto
+    # `placeholder` for true.
+    morph_axes = {
+        "height": ("height_plus", "height_minus"),
+        "chest": ("chest_plus", "chest_minus"),
+        "waist": ("waist_plus", "waist_minus"),
+        "hip": ("hip_plus", "hip_minus"),
+        "shoulder": ("shoulder_plus", "shoulder_minus"),
+        "torsoLeg": ("torso_plus", "torso_minus"),
+    }
     manifest = {
-        "body": "body/base-male.glb",
-        "garments": {k: f"garments/{k}.glb" for k in GARMENT_SHAPES},
+        "version": 2,
+        "avatar": {
+            "url": "body/base-male.glb",
+            "placeholder": True,
+            "morphTargets": {axis: {"plus": plus, "minus": minus} for axis, (plus, minus) in morph_axes.items()},
+        },
+        "garments": {k: {"url": f"garments/{k}.glb", "placeholder": True} for k in GARMENT_SHAPES},
         "regions": ["Chest", "Waist", "Hip", "Shoulder", "Length"],
-        "note": "Placeholders low-poly. Substitua por assets Blender em escala metrica (cm).",
+        "note": (
+            "Assets placeholder (cubos low-poly). Enquanto placeholder=true a cena usa a silhueta "
+            "estilizada. Substitua por GLB em escala metrica (metros, Y para cima, pes em y=0) e "
+            "marque placeholder=false."
+        ),
     }
     (MODELS / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"Gerados {len(BODY_PARTS)} segmentos corporais + {len(GARMENT_SHAPES)} pecas em {MODELS}")

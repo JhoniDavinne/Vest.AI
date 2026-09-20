@@ -1,14 +1,68 @@
 {
-  "body": "body/base-male.glb",
+  "version": 2,
+  "avatar": {
+    "url": "body/base-male.glb",
+    "placeholder": true,
+    "morphTargets": {
+      "height": {
+        "plus": "height_plus",
+        "minus": "height_minus"
+      },
+      "chest": {
+        "plus": "chest_plus",
+        "minus": "chest_minus"
+      },
+      "waist": {
+        "plus": "waist_plus",
+        "minus": "waist_minus"
+      },
+      "hip": {
+        "plus": "hip_plus",
+        "minus": "hip_minus"
+      },
+      "shoulder": {
+        "plus": "shoulder_plus",
+        "minus": "shoulder_minus"
+      },
+      "torsoLeg": {
+        "plus": "torso_plus",
+        "minus": "torso_minus"
+      }
+    }
+  },
   "garments": {
-    "tshirt": "garments/tshirt.glb",
-    "shirt": "garments/shirt.glb",
-    "polo": "garments/polo.glb",
-    "hoodie": "garments/hoodie.glb",
-    "jacket": "garments/jacket.glb",
-    "dress": "garments/dress.glb",
-    "pants": "garments/pants.glb",
-    "shorts": "garments/shorts.glb"
+    "tshirt": {
+      "url": "garments/tshirt.glb",
+      "placeholder": true
+    },
+    "shirt": {
+      "url": "garments/shirt.glb",
+      "placeholder": true
+    },
+    "polo": {
+      "url": "garments/polo.glb",
+      "placeholder": true
+    },
+    "hoodie": {
+      "url": "garments/hoodie.glb",
+      "placeholder": true
+    },
+    "jacket": {
+      "url": "garments/jacket.glb",
+      "placeholder": true
+    },
+    "dress": {
+      "url": "garments/dress.glb",
+      "placeholder": true
+    },
+    "pants": {
+      "url": "garments/pants.glb",
+      "placeholder": true
+    },
+    "shorts": {
+      "url": "garments/shorts.glb",
+      "placeholder": true
+    }
   },
   "regions": [
     "Chest",
@@ -17,5 +71,5 @@
     "Shoulder",
     "Length"
   ],
-  "note": "Placeholders low-poly. Substitua por assets Blender em escala metrica (cm)."
+  "note": "Assets placeholder (cubos low-poly). Enquanto placeholder=true a cena usa a silhueta estilizada. Substitua por GLB em escala metrica (metros, Y para cima, pes em y=0) e marque placeholder=false."
 }

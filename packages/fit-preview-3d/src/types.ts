@@ -26,15 +26,26 @@ export type FitPreviewSize = "full" | "medium" | "compact";
 export interface FitPreview3DProps {
   payload: FitPreviewPayload;
   size?: FitPreviewSize;
+  /** Base dos assets 3D; `${modelsBaseUrl}/manifest.json` localiza avatar e pecas. */
   modelsBaseUrl?: string;
   className?: string;
+  /** Exibido quando WebGL nao esta disponivel ou o contexto e perdido. */
   fallback?: ReactNode;
   showDisclaimer?: boolean;
+  /** Barra de vistas (frente/lateral/costas), zoom e reset. Padrao: true. */
+  showControls?: boolean;
+  /**
+   * Exibe assets marcados como `placeholder` no manifest. Apenas para validar o
+   * pipeline de carregamento — nunca ativar em producao.
+   */
+  renderPlaceholders?: boolean;
+  /** Notificado quando um GLB falha e a cena cai para a representacao estilizada. */
+  onAssetError?: (error: Error) => void;
 }
 
 export function buildPreviewPayloadFromRecommendation(
   response: RecommendationResponse,
-  product: Pick<Product, "category" | "color" | "modeling">,
+  product: Pick<Product, "category" | "color" | "modeling"> & Partial<Pick<Product, "fabric" | "elasticity_pct">>,
   options?: {
     body?: {
       height?: number | null;
@@ -73,6 +84,8 @@ export function buildPreviewPayloadFromRecommendation(
       category: product.category,
       color: product.color,
       modeling: product.modeling,
+      fabric: product.fabric ?? "",
+      elasticity_pct: product.elasticity_pct ?? null,
       evaluatedSize: response.evaluated_size,
       measurements: options?.garmentMeasurements ?? {
         chest: garmentFromRegions.chest as number | undefined,

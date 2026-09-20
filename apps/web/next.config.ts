@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Pacotes do monorepo consumidos diretamente do codigo-fonte TypeScript
-  transpilePackages: ["@veste-ai/contracts", "@veste-ai/ui", "@veste-ai/widget"],
+  transpilePackages: ["@veste-ai/contracts", "@veste-ai/ui", "@veste-ai/widget", "@veste-ai/fit-preview-3d"],
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   images: { unoptimized: true },
   env: {

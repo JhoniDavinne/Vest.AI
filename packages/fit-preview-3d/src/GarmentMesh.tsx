@@ -2,69 +2,72 @@
 
 import * as React from "react";
 import type { FitPreviewPayload } from "./types";
-import { computeBodyScale, garmentScale, parseGarmentColor } from "./scaleBody";
-import { REGION_BAND_Y } from "./silhouette";
+import type { ModelsManifest } from "./manifest";
+import { isRenderableAsset, resolveGarmentAsset } from "./manifest";
+import { computeBodyScale } from "./scaleBody";
+import { computeGarmentVisualState } from "./garmentVisual";
+import { GarmentPrimitive } from "./GarmentPrimitive";
+import { ModelErrorBoundary } from "./ModelErrorBoundary";
+import { useGarmentModel } from "./useGarmentModel";
+import { DEFAULT_MODELS_BASE } from "./constants";
 
 interface GarmentMeshProps {
   payload: FitPreviewPayload;
   modelsBaseUrl?: string;
+  manifest?: ModelsManifest | null;
+  renderPlaceholders?: boolean;
+  onAssetError?: (error: Error) => void;
 }
 
-/** Roupa simplificada sobre a silhueta — sem mesh realista por SKU. */
-export function GarmentMesh({ payload }: GarmentMeshProps) {
-  const color = parseGarmentColor(payload.garment.color);
-  const [sx, sy] = garmentScale(payload);
+interface GarmentGLBProps {
+  url: string;
+  payload: FitPreviewPayload;
+}
+
+/**
+ * Peca GLB por categoria: garment.category -> manifest -> GLB -> materiais/escala
+ * derivados de `computeGarmentVisualState` (cor, tecido, elasticidade, modelagem,
+ * medidas). Sem simulacao de tecido; o caimento regional e do motor.
+ */
+function GarmentGLB({ url, payload }: GarmentGLBProps) {
+  const visual = React.useMemo(() => computeGarmentVisualState(payload), [payload]);
   const factors = React.useMemo(() => computeBodyScale(payload), [payload]);
+  const model = useGarmentModel(url, visual);
+
+  // Acompanha a altura do avatar para manter alinhamento vertical com o corpo.
+  return (
+    <group name={`garment-glb-${payload.garment.category}`} scale={[1, factors.height, 1]}>
+      <primitive object={model.object} />
+    </group>
+  );
+}
+
+/**
+ * Cadeia de fallback: GLB da categoria (manifest, nao-placeholder) -> GarmentPrimitive.
+ */
+export function GarmentMesh({
+  payload,
+  modelsBaseUrl = DEFAULT_MODELS_BASE,
+  manifest = null,
+  renderPlaceholders = false,
+  onAssetError,
+}: GarmentMeshProps) {
   const category = payload.garment.category;
-  const isBottom = category === "pants" || category === "shorts";
-  const isDress = category === "dress";
+  const asset = React.useMemo(
+    () => resolveGarmentAsset(manifest, category, modelsBaseUrl),
+    [manifest, category, modelsBaseUrl],
+  );
+  const primitive = <GarmentPrimitive payload={payload} />;
 
-  const garmentMat = {
-    color,
-    roughness: 0.55,
-    metalness: 0.04,
-    transparent: true,
-    opacity: 0.82,
-  };
-
-  if (isBottom) {
-    const legSpread = 0.085;
-    const legScaleY = 0.55 * sy;
-    return (
-      <group name={`garment-${category}`} scale={[1, factors.height, 1]}>
-        <mesh position={[-legSpread, 0.36, 0.05]} scale={[0.85 * sx, legScaleY, 0.22]}>
-          <boxGeometry args={[0.16, 0.72, 0.12]} />
-          <meshStandardMaterial {...garmentMat} />
-        </mesh>
-        <mesh position={[legSpread, 0.36, 0.05]} scale={[0.85 * sx, legScaleY, 0.22]}>
-          <boxGeometry args={[0.16, 0.72, 0.12]} />
-          <meshStandardMaterial {...garmentMat} />
-        </mesh>
-      </group>
-    );
+  if (!isRenderableAsset(asset, renderPlaceholders)) {
+    return primitive;
   }
 
-  const torsoCenterY = isDress ? (REGION_BAND_Y.chest + REGION_BAND_Y.hip) / 2 : REGION_BAND_Y.chest - 0.04;
-  const torsoHeight = isDress
-    ? REGION_BAND_Y.chest - REGION_BAND_Y.hip + 0.42 * sy
-    : 0.34 * sy + 0.12;
-  const torsoWidth = Math.min(0.52, 0.36 + sx * 0.06);
-
   return (
-    <group name={`garment-${category}`} scale={[1, factors.height, 1]}>
-      <mesh position={[0, torsoCenterY, 0.05]} scale={[torsoWidth, torsoHeight, 0.14]}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial {...garmentMat} />
-      </mesh>
-      {isDress ? (
-        <mesh
-          position={[0, (REGION_BAND_Y.hip + REGION_BAND_Y.length) / 2, 0.05]}
-          scale={[torsoWidth * 0.92, (REGION_BAND_Y.hip - REGION_BAND_Y.length) * 0.85, 0.12]}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial {...garmentMat} opacity={0.78} />
-        </mesh>
-      ) : null}
-    </group>
+    <ModelErrorBoundary fallback={primitive} resetKey={asset.url} onError={onAssetError}>
+      <React.Suspense fallback={primitive}>
+        <GarmentGLB url={asset.url} payload={payload} />
+      </React.Suspense>
+    </ModelErrorBoundary>
   );
 }

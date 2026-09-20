@@ -204,6 +204,8 @@ class FitPreviewGarmentPayload(BaseModel):
     category: CategoryLiteral
     color: str = ""
     modeling: ModelingLiteral
+    fabric: str = ""  # aparencia do material 3D; nao altera o caimento
+    elasticity_pct: float | None = None
     evaluatedSize: str
     measurements: GarmentMeasurementIn
 
