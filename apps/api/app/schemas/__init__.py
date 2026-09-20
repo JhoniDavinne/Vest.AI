@@ -224,6 +224,9 @@ class SizeComparison(BaseModel):
     recommended: bool
     components: dict[str, float | None]
     regional_analysis: dict[str, str]
+    # Detalhe regional ja calculado pelo motor para este tamanho (mesma estrutura de
+    # RecommendationResponse.regions). Permite comparar/visualizar tamanhos sem nova chamada.
+    regions: list[RegionDetail] = Field(default_factory=list)
 
 
 class RecommendationResponse(BaseModel):

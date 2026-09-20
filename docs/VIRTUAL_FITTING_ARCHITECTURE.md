@@ -60,7 +60,7 @@ Via HTTP: `RecommendationRequest { sku | product_id+size, user_id | customer, fi
 `RecommendationResult` → `RecommendationResponse` (`apps/api/app/schemas/__init__.py`):
 `recommended_size/sku`, `evaluated_size/sku`, `fit_score` (0–10), `confidence`, `confidence_score`, `confidence_message`, `scale_label/message`, `explanation`, `recommendation`, `regional_analysis`, `components`, `weights`, `regions[RegionDetail]` (com `body`, `garment`, `ease`, `design_ease`, `deviation`, `score`, `note`), `comparison[SizeComparison]` (hoje só `fit_score`, `components`, `regional_analysis` por tamanho), `visual_used`, `notes[]`, `fit_preview`.
 
-Observação: `RecommendationResult.comparison` contém `SizeEvaluation.regions` completos por tamanho; `build_response` **descarta** esse detalhe ao gerar `SizeComparison`.
+Observação (Etapa 3): `RecommendationResult.comparison` contém `SizeEvaluation.regions` completos por tamanho e `build_response` agora os **propaga** em `SizeComparison.regions` (`region_details()` em `recommendation_service.py`), sem reexecutar `evaluate_size`.
 
 ## Onde o resultado é consumido
 
@@ -132,7 +132,8 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 - Manifest `apps/web/public/models/manifest.json` (v2, com `placeholder` e `morphTargets`) **é lido** no cliente por `useModelsManifest.ts` / `manifest.ts` e é a única fonte de localização de assets.
 - `AvatarBody.tsx`: GLB real (não-placeholder) → `useAvatarModel.ts` (`useGLTF` + clone + escala métrica + `avatarMorph.ts` aplicando `computeBodyScale` em morph targets); senão `StylizedSilhouette.tsx` (billboard com `apps/web/public/images/body-silhouette-alpha.png`).
 - `GarmentMesh.tsx`: GLB por categoria → `useGarmentModel.ts` + `garmentVisual.ts` (cor, tecido, elasticidade, modelagem, medidas com escala limitada); senão `GarmentPrimitive.tsx` (caixas da v1).
-- `RegionalOverlay.tsx` inalterado = anéis `torusGeometry` por `status` (`STATUS_COLOR_HEX`), posições em `silhouette.ts` (`REGION_BAND_Y`).
+- `RegionalOverlay.tsx` (Etapa 3): anéis por região dirigidos por `status` (cor), `1 − score` (espessura/opacidade/emissão) e sinal de `deviation` (raio para dentro/fora); legenda textual em `FitLegend.tsx` via `regionLegend.ts`. Posições em `silhouette.ts` (`REGION_BAND_Y`).
+- Camada `FitVisualizationState` (`fitVisualization.ts`, Etapa 3): normaliza `RecommendationResponse`/`comparison[]` para o 3D; `SizeSelector3D.tsx` (HTML) troca de tamanho sem HTTP quando `comparison[].regions` existe. Detalhes em `docs/implementation/ETAPA_03_FIT_INTEGRATION.md`.
 - Falhas de asset isoladas por `ModelErrorBoundary.tsx`; WebGL por `useFitPreview.ts` + `WebGLContextGuard.tsx`.
 - Controles: `FitPreviewControls.tsx` + `CameraRig.tsx` + `cameraViews.ts` (frente/lateral/costas, zoom, reset) sobre o `OrbitControls` existente; um único `Canvas`.
 - **GLBs em `apps/web/public/models/**` continuam sendo cubos placeholder** (`placeholder: true`) → a cena exibe silhueta + primitivas até que assets reais sejam fornecidos.
@@ -147,14 +148,14 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 
 - `packages/fit-preview-3d/src/GarmentMesh.tsx` resolve `manifest.garments[payload.garment.category]` e, com GLB real, usa `useGarmentModel.ts` + `garmentVisual.ts` (cor via `parseGarmentColor`, material por `fabric`/`elasticity_pct`, volume por `modeling`, escala peça/corpo amortecida e limitada).
 - Fallback: `GarmentPrimitive.tsx`.
-- Próxima etapa: evoluir `RegionalOverlay.tsx` para heatmap dirigido por `regions[].deviation/status/score` (nós `Chest/Waist/Hip/Shoulder/Length` previstos em `constants.ts` → `REGION_NODE`).
+- Feito (Etapa 3): `RegionalOverlay.tsx` dirigido por `regions[].status/deviation/score`. Pendente para quando houver GLB real: ancorar aos nós `Chest/Waist/Hip/Shoulder/Length` (`constants.ts` → `REGION_NODE`).
 - Assets esperados: `apps/web/public/models/garments/{category}.glb` com `placeholder: false`. **PENDENTE: asset 3D real.**
 
 ## Dados existentes reutilizados
 
 - `RecommendationResponse.fit_preview` (`FitPreviewPayload`): `body` (medidas + `photoRatios`), `garment` (`category, color, modeling, evaluatedSize, measurements`), `regions[]`, `disclaimer` — montado em `apps/api/app/services/fit_preview_mapper.py`.
 - `regions[].ease / design_ease / deviation / score / status` — base numérica do caimento.
-- `comparison[]` — para seletor de tamanhos dentro do 3D (após incluir `regions` por tamanho).
+- `comparison[].regions` (Etapa 3) — seletor de tamanhos dentro do 3D sem nova chamada HTTP.
 - `Product.color`, `fabric`, `composition`, `elasticity_pct`, `modeling`, `category`.
 - Fallbacks client-side: `buildPreviewPayloadFromRecommendation`, `mergeFitPreviewPayload` (`packages/fit-preview-3d/src/types.ts`).
 - Cores/labels: `STATUS_COLOR_HEX` (`constants.ts`), `REGION_LABEL`, `REGION_STATUS_LABEL` (`packages/contracts/src/index.ts`).
@@ -163,18 +164,21 @@ Detalhes em `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`.
 
 **Backend**
 - Feito (Etapa 2): `apps/api/app/schemas/__init__.py` (`FitPreviewGarmentPayload.fabric`, `.elasticity_pct` opcionais) e `apps/api/app/services/fit_preview_mapper.py` (preenche ambos).
-- Próximas etapas: `SizeComparison.regions` em `schemas/__init__.py` e `recommendation_service.build_response`; `apps/api/app/models/entities.py` (`Product.asset_3d_url`, `Product.flat_image_url`, `Product.material_preset`); `apps/api/app/seed/catalog.py`; `database/seed/catalog.json`; `apps/api/tests/test_api.py`; criar `apps/api/alembic/versions/0002_3d_assets.py`
+- Feito (Etapa 3): `SizeComparison.regions` em `schemas/__init__.py`; `region_details()` + propagação em `recommendation_service.build_response`; teste em `apps/api/tests/test_api.py`.
+- Próximas etapas: `apps/api/app/models/entities.py` (`Product.asset_3d_url`, `Product.flat_image_url`, `Product.material_preset`); `apps/api/app/seed/catalog.py`; `database/seed/catalog.json`; criar `apps/api/alembic/versions/0002_3d_assets.py`
 
 **Contratos**
-- Feito (Etapa 2): `packages/contracts/src/index.ts` (`FitPreviewGarmentPayload.fabric?`, `.elasticity_pct?`). Próximas etapas: `SizeComparison.regions`.
+- Feito (Etapa 2): `packages/contracts/src/index.ts` (`FitPreviewGarmentPayload.fabric?`, `.elasticity_pct?`). Feito (Etapa 3): `SizeComparison.regions?`.
 
 **Pacote 3D**
 - Feito (Etapa 2): `AvatarBody.tsx`, `GarmentMesh.tsx`, `AvatarScene.tsx`, `FitPreview3D.tsx`, `types.ts`, `index.ts` modificados; criados `manifest.ts`, `useModelsManifest.ts`, `avatarMorph.ts`, `useAvatarModel.ts`, `garmentVisual.ts`, `useGarmentModel.ts`, `modelUtils.ts`, `ModelErrorBoundary.tsx`, `GarmentPrimitive.tsx`, `cameraViews.ts`, `CameraRig.tsx`, `FitPreviewControls.tsx` + testes.
-- Próximas etapas: modificar `RegionalOverlay.tsx`, `constants.ts`, `silhouette.ts`; criar `FitHeatmap.tsx`, `SizeSelector3D.tsx`.
+- Feito (Etapa 3): `RegionalOverlay.tsx`, `FitPreview3D.tsx`, `AvatarScene.tsx`, `types.ts`, `index.ts` modificados; criados `fitVisualization.ts`, `regionLegend.ts`, `SizeSelector3D.tsx`, `FitLegend.tsx` + testes.
+- Próximas etapas (UX/UI, assets reais): `constants.ts`, `silhouette.ts` (ancoragem aos nós do GLB), refinamento visual do overlay.
 
 **Web**
 - Feito (Etapa 2): `apps/web/next.config.ts` (`transpilePackages` + `@veste-ai/fit-preview-3d`); `apps/web/public/models/manifest.json` (v2); `scripts/generate_3d_models.py` (manifest v2).
-- Próximas etapas: `apps/web/src/components/fit/result-view.tsx`, `apps/web/src/components/fit/fit-preview-3d-lazy.tsx`, `apps/web/src/components/catalog/product-fit-preview.tsx`; substituir assets `apps/web/public/models/body/*.glb`, `apps/web/public/models/garments/*.glb` (PENDENTE: asset 3D real)
+- Feito (Etapa 3): `apps/web/src/components/fit/result-view.tsx` (recommendedSize × selectedPreviewSize), `apps/web/src/components/catalog/product-fit-preview.tsx`, `apps/web/src/lib/fit-preview.ts` (+ teste).
+- Próximas etapas: `apps/web/src/components/fit/fit-preview-3d-lazy.tsx` (UX); substituir assets `apps/web/public/models/body/*.glb`, `apps/web/public/models/garments/*.glb` (PENDENTE: asset 3D real)
 
 **Widget**
 - Modificar: `packages/widget/src/VesteFit.tsx` (`enable3D` default `false`), `packages/widget/src/fit-preview-3d.tsx`
@@ -221,7 +225,7 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 - Widget (`packages/widget`) empacota three/R3F no IIFE e `enable3D` default `true` → bundle pesado para lojas parceiras.
 - Avatar com apenas 6 medidas corporais → morphs derivados por heurística; risco de representação enganosa. Manter clamps de `scaleBody.ts` e disclaimer.
 - Deformação da peça sem física pode sugerir caimento incorreto → mapear estritamente de `regions[].deviation/status` do motor.
-- Comparar tamanhos no 3D com o contrato atual exige N chamadas a `POST /recommendations` → incluir `regions` em `SizeComparison`.
+- ~~Comparar tamanhos no 3D com o contrato atual exige N chamadas a `POST /recommendations`.~~ Resolvido na Etapa 3 (`SizeComparison.regions`); só a explicação textual de outro tamanho ainda exige `persist:false` sob demanda.
 - GLBs reais em `apps/web/public/models` afetam LCP da PDP → Draco/meshopt, preload tardio, `dpr` adaptativo.
 - Sem autenticação de consumidor (`GET /users/{id}` aberto; `userId` em `localStorage`) → bloqueador antes de qualquer feature que gere imagem da pessoa (VTO).
 - Python local 3.14 vs API ≥ 3.11 vs CatVTON 3.9 → isolamento obrigatório do serviço VTO.
@@ -233,7 +237,7 @@ Assets (não são pacotes npm): avatar GLB paramétrico neutro com morph targets
 
 - [ ] Digital Twin 3D — **infraestrutura concluída (Etapa 2)**: manifest v2, `useAvatarModel`, morphs via `computeBodyScale` → `avatarMorph.ts`, silhueta como fallback, controles de câmera. **PENDENTE: asset 3D real** (avatar GLB com morph targets). Ver `docs/implementation/ETAPA_02_DIGITAL_TWIN_3D.md`
 - [ ] Garment3D — **infraestrutura concluída (Etapa 2)**: `useGarmentModel`, `garmentVisual.ts` (cor/tecido/elasticidade/modelagem/medidas), `GarmentPrimitive` como fallback. **PENDENTE: asset 3D real** (8 GLBs por categoria)
-- [ ] Integração com motor de caimento — `fit_preview` estendido, `SizeComparison.regions`, heatmap por `deviation/status` em `RegionalOverlay.tsx`
+- [x] Integração com motor de caimento — **concluída (Etapa 3)**: `SizeComparison.regions` propagado do motor, `FitVisualizationState` (`fitVisualization.ts`), overlay por `status/deviation/score`, `SizeSelector3D` + `FitLegend`, troca de tamanho sem HTTP e `recommendedSize × selectedPreviewSize` em `result-view.tsx`. Ver `docs/implementation/ETAPA_03_FIT_INTEGRATION.md`
 - [ ] UX do provador — seletor de tamanho no 3D, comparação, disclaimer, fallback em camadas em `result-view.tsx` / `product-fit-preview.tsx`
 - [ ] CatVTON local — serviço isolado `apps/tryon/` com GPU, pesos locais, feature flag
 - [ ] Integração CatVTON — `routes/tryon.py`, `tryon_service.py`, `TryOnJob`, `flat_image_url`, seção em `result-view.tsx`

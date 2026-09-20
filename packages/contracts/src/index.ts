@@ -210,6 +210,11 @@ export interface SizeComparison {
   recommended: boolean;
   components: ComponentScores;
   regional_analysis: Record<RegionKey, RegionStatus>;
+  /**
+   * Detalhe regional calculado pelo motor para este tamanho (mesma estrutura de
+   * `RecommendationResponse.regions`). Opcional para compatibilidade com respostas antigas.
+   */
+  regions?: RegionDetail[];
 }
 
 export interface RecommendationResponse {

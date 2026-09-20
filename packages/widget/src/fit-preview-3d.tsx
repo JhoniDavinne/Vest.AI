@@ -1,20 +1,32 @@
 "use client";
 
 import * as React from "react";
-import type { FitPreviewPayload } from "@veste-ai/contracts";
-import { buildPreviewPayloadFromRecommendation, mergeFitPreviewPayload } from "@veste-ai/fit-preview-3d";
+import type { FitPreviewPayload, RecommendationResponse } from "@veste-ai/contracts";
+import {
+  buildPreviewPayloadFromRecommendation,
+  createFitVisualizationStateForSize,
+  listSizeOptions,
+  mergeFitPreviewPayload,
+} from "@veste-ai/fit-preview-3d";
 
 const FitPreview3D = React.lazy(() =>
   import("@veste-ai/fit-preview-3d").then((m) => ({ default: m.FitPreview3D })),
 );
 
-export function WidgetFitPreview3D({
-  payload,
-  enabled = true,
-}: {
-  payload: FitPreviewPayload | null;
+export interface WidgetFitPreview3DProps {
+  result: RecommendationResponse;
+  /** Tamanho em foco no widget (recommendedSize x selectedPreviewSize). */
+  selectedSize: string;
+  /** Troca de tamanho vinda do seletor 3D (sem HTTP quando comparison traz regions). */
+  onSelectSize?: (size: string) => void;
   enabled?: boolean;
-}) {
+}
+
+export function WidgetFitPreview3D({ result, selectedSize, onSelectSize, enabled = true }: WidgetFitPreview3DProps) {
+  const payload = result.fit_preview ?? null;
+  const fit = React.useMemo(() => createFitVisualizationStateForSize(result, selectedSize), [result, selectedSize]);
+  const sizes = React.useMemo(() => listSizeOptions(result).filter((o) => o.hasRegions), [result]);
+
   if (!enabled || !payload) return null;
 
   return (
@@ -29,7 +41,14 @@ export function WidgetFitPreview3D({
           </div>
         }
       >
-        <FitPreview3D payload={payload} size="compact" showDisclaimer />
+        <FitPreview3D
+          payload={payload}
+          fit={fit}
+          sizes={onSelectSize ? sizes : undefined}
+          onSelectSize={onSelectSize}
+          size="compact"
+          showDisclaimer
+        />
       </React.Suspense>
     </div>
   );

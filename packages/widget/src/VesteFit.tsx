@@ -292,7 +292,17 @@ function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, on
         </div>
       </div>
 
-      <WidgetFitPreview3D payload={result.fit_preview ?? null} enabled={enable3D} />
+      <WidgetFitPreview3D
+        result={result}
+        selectedSize={selectedSize}
+        onSelectSize={(size) => {
+          onSelectSize(size);
+          // Sem detalhe regional no comparison, a API e a unica fonte para este tamanho.
+          const entry = result.comparison.find((c) => c.size === size);
+          if (size !== result.evaluated_size && !(entry?.regions && entry.regions.length > 0)) onEvaluate(size);
+        }}
+        enabled={enable3D}
+      />
 
       <div className="vf-regions">
         {regionEntries.map(([region, status]) => (

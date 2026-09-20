@@ -68,6 +68,34 @@ def test_recommendation_demo_payload(client):
     assert "disclaimer" in body["fit_preview"]
 
 
+def test_comparison_propagates_engine_regions_per_size(client):
+    """SizeComparison.regions deve espelhar as regioes ja calculadas pelo motor por tamanho."""
+    body = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-M", "customer": DEMO_CUSTOMER}).json()
+    comparison = {c["size"]: c for c in body["comparison"]}
+    region_keys = {"region", "status", "label", "body", "garment", "ease", "design_ease", "deviation", "score", "note"}
+
+    for entry in comparison.values():
+        assert entry["regions"], f"tamanho {entry['size']} sem regions"
+        assert {r["region"] for r in entry["regions"]} == set(body["regional_analysis"])
+        for region in entry["regions"]:
+            assert region_keys <= set(region)
+        # regional_analysis (status resumido) e regions (detalhe) devem ser coerentes
+        assert {r["region"]: r["status"] for r in entry["regions"]} == entry["regional_analysis"]
+
+    # Para o tamanho avaliado, comparison[].regions == regions do topo da resposta
+    assert comparison[body["evaluated_size"]]["regions"] == body["regions"]
+
+    # Tamanhos diferentes trazem medidas de peca diferentes (dados do motor, nao recalculados no cliente)
+    chest_m = next(r for r in comparison["M"]["regions"] if r["region"] == "chest")["garment"]
+    chest_l = next(r for r in comparison["L"]["regions"] if r["region"] == "chest")["garment"]
+    assert chest_l > chest_m
+
+    # Consistencia: avaliar L diretamente devolve exatamente as regioes do comparison[L]
+    lg = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-L", "customer": DEMO_CUSTOMER, "persist": False}).json()
+    assert lg["regions"] == comparison["L"]["regions"]
+    assert lg["fit_score"] == comparison["L"]["fit_score"]
+
+
 def test_recommendation_other_size_changes_score(client):
     m = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-M", "customer": DEMO_CUSTOMER}).json()
     lg = client.post(f"{API}/recommendations", json={"sku": "CAMISETA-001-L", "customer": DEMO_CUSTOMER}).json()

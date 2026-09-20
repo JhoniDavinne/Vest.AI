@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { FitPreviewPayload } from "./types";
 import type { ModelsManifest } from "./manifest";
+import type { FitRegionVisual } from "./fitVisualization";
 import { AvatarBody } from "./AvatarBody";
 import { GarmentMesh } from "./GarmentMesh";
 import { RegionalOverlay } from "./RegionalOverlay";
@@ -15,6 +16,8 @@ import { WebGLContextGuard } from "./WebGLContextGuard";
 
 interface AvatarSceneProps {
   payload: FitPreviewPayload;
+  /** Regioes normalizadas do motor para o overlay (padrao: payload.regions). */
+  regions?: FitRegionVisual[];
   modelsBaseUrl?: string;
   manifest?: ModelsManifest | null;
   renderPlaceholders?: boolean;
@@ -26,6 +29,7 @@ interface AvatarSceneProps {
 
 function SceneContent({
   payload,
+  regions,
   modelsBaseUrl,
   manifest,
   renderPlaceholders,
@@ -34,6 +38,7 @@ function SceneContent({
   onAssetError,
 }: {
   payload: FitPreviewPayload;
+  regions?: FitRegionVisual[];
   modelsBaseUrl: string;
   manifest: ModelsManifest | null;
   renderPlaceholders: boolean;
@@ -63,7 +68,7 @@ function SceneContent({
           renderPlaceholders={renderPlaceholders}
           onAssetError={onAssetError}
         />
-        <RegionalOverlay payload={payload} />
+        <RegionalOverlay payload={payload} regions={regions} />
       </group>
       <OrbitControls
         enablePan={false}
@@ -81,6 +86,7 @@ function SceneContent({
 
 export function AvatarScene({
   payload,
+  regions,
   modelsBaseUrl = DEFAULT_MODELS_BASE,
   manifest = null,
   renderPlaceholders = false,
@@ -114,6 +120,7 @@ export function AvatarScene({
     >
       <SceneContent
         payload={payload}
+        regions={regions}
         modelsBaseUrl={modelsBaseUrl}
         manifest={manifest}
         renderPlaceholders={renderPlaceholders}

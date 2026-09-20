@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..engine import BodyProfile, FitPreference, RecommendationEngine, RecommendationResult, VisualProportions
 from ..engine.messages import STATUS_PT
+from ..engine.types import RegionResult
 from ..models import FitAnalysis, PhotoAnalysis, Product, SKUSize
 from ..schemas import RecommendationRequest, RecommendationResponse, RegionDetail, SizeComparison, FitPreviewPayload
 from .errors import NotFoundError, ValidationError
@@ -154,16 +155,9 @@ def persist_analysis(
     return analysis
 
 
-def build_response(
-    product: Product,
-    sku: SKUSize,
-    result: RecommendationResult,
-    analysis: FitAnalysis | None,
-    *,
-    body: BodyProfile | None = None,
-    visual: VisualProportions | None = None,
-) -> RecommendationResponse:
-    regions = [
+def region_details(regions: list[RegionResult]) -> list[RegionDetail]:
+    """Serializa os RegionResult ja calculados pelo motor (sem recalcular nada)."""
+    return [
         RegionDetail(
             region=r.region.value,
             status=r.status.value,
@@ -176,8 +170,22 @@ def build_response(
             score=r.score,
             note=r.note,
         )
-        for r in result.evaluated.regions
+        for r in regions
     ]
+
+
+def build_response(
+    product: Product,
+    sku: SKUSize,
+    result: RecommendationResult,
+    analysis: FitAnalysis | None,
+    *,
+    body: BodyProfile | None = None,
+    visual: VisualProportions | None = None,
+) -> RecommendationResponse:
+    regions = region_details(result.evaluated.regions)
+    # `result.comparison` ja contem um SizeEvaluation completo (com regioes) por tamanho,
+    # produzido em RecommendationEngine.recommend(); apenas propagamos.
     comparison = [
         SizeComparison(
             sku=e.sku,
@@ -186,6 +194,7 @@ def build_response(
             recommended=e.sku == result.recommended_sku,
             components=e.components.as_dict(),
             regional_analysis=e.regional_analysis(),
+            regions=region_details(e.regions),
         )
         for e in result.comparison
     ]

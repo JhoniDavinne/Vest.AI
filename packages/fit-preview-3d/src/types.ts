@@ -11,6 +11,7 @@ import type {
   User,
 } from "@veste-ai/contracts";
 import { FIT_PREVIEW_DISCLAIMER } from "./constants";
+import type { FitVisualizationState, SizeOption } from "./fitVisualization";
 
 export interface BodyScaleFactors {
   height: number;
@@ -41,6 +42,22 @@ export interface FitPreview3DProps {
   renderPlaceholders?: boolean;
   /** Notificado quando um GLB falha e a cena cai para a representacao estilizada. */
   onAssetError?: (error: Error) => void;
+  /**
+   * Estado visual normalizado do motor (`createFitVisualizationState*`). Quando
+   * informado, regioes e medidas da peca do `payload` sao substituidas pelas do
+   * tamanho deste estado. Sem ele, o componente usa `payload.regions`.
+   */
+  fit?: FitVisualizationState | null;
+  /** Tamanhos disponiveis (`listSizeOptions(response)`) para o seletor HTML. */
+  sizes?: SizeOption[];
+  /** Chamado quando o usuario escolhe outro tamanho no seletor. */
+  onSelectSize?: (size: string) => void;
+  /** Tamanho cujo estado esta sendo carregado pelo host (fallback HTTP). */
+  loadingSize?: string | null;
+  /** Legenda textual "Regiao — Caimento". Padrao: true. */
+  showLegend?: boolean;
+  /** Cabecalho com tamanho/score do motor. Padrao: true quando `fit` e informado. */
+  showSummary?: boolean;
 }
 
 export function buildPreviewPayloadFromRecommendation(

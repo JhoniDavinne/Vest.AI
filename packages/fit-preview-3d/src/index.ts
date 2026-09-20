@@ -6,6 +6,33 @@ export { GarmentPrimitive } from "./GarmentPrimitive";
 export { StylizedSilhouette } from "./StylizedSilhouette";
 export { ModelErrorBoundary } from "./ModelErrorBoundary";
 export { FitPreviewControls } from "./FitPreviewControls";
+export { SizeSelector3D } from "./SizeSelector3D";
+export type { SizeSelector3DProps } from "./SizeSelector3D";
+export { FitLegend } from "./FitLegend";
+export { RegionalOverlay } from "./RegionalOverlay";
+
+// Integracao com o motor (estado visual normalizado)
+export {
+  createFitVisualizationState,
+  createFitVisualizationStateForSize,
+  createFitVisualizationStateFromComparison,
+  createFitVisualizationStateFromPayload,
+  applyFitStateToPayload,
+  fitStateToRegionDetails,
+  listSizeOptions,
+  buildRegions,
+  toRegionVisual,
+  FIT_REGION_KEYS,
+} from "./fitVisualization";
+export type {
+  FitVisualizationState,
+  FitRegionVisual,
+  FitRegionKey,
+  FitVisualizationSource,
+  SizeOption,
+} from "./fitVisualization";
+export { describeRegionFit, legendLine, fitDirection, regionIntensity, REGION_LABEL_PT } from "./regionLegend";
+export type { FitDirection } from "./regionLegend";
 export {
   buildPreviewPayloadFromRecommendation,
   buildPreviewPayloadFromUserAndProduct,
