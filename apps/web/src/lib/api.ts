@@ -70,6 +70,9 @@ async function request<T>(path: string, init: RequestInit = {}, options: { apiKe
     }
     throw new ApiError(detail, response.status);
   }
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return (await response.json()) as T;
 }
 
@@ -83,6 +86,29 @@ export const api = {
   getSizes: (idOrSlug: string) => request<Size[]>(`/products/${encodeURIComponent(idOrSlug)}/sizes`),
   createProduct: (payload: ProductCreate, apiKey?: string) =>
     request<Product>("/products", { method: "POST", body: JSON.stringify(payload) }, { apiKey }),
+  uploadProductImage: (file: File, apiKey?: string) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request<{ image_url: string }>("/products/upload-image", { method: "POST", body: form }, { apiKey });
+  },
+  updateProductImage: (idOrSlug: string, imageUrl: string, apiKey?: string) =>
+    request<Product>(
+      `/products/${encodeURIComponent(idOrSlug)}/image`,
+      { method: "PATCH", body: JSON.stringify({ image_url: imageUrl }) },
+      { apiKey },
+    ),
+  updateProductImages: (idOrSlug: string, images: string[], apiKey?: string) =>
+    request<Product>(
+      `/products/${encodeURIComponent(idOrSlug)}/images`,
+      { method: "PATCH", body: JSON.stringify({ images }) },
+      { apiKey },
+    ),
+  deleteProduct: (idOrSlug: string, apiKey?: string) =>
+    request<void>(
+      `/products/${encodeURIComponent(idOrSlug)}`,
+      { method: "DELETE" },
+      { apiKey },
+    ),
 
   // Consumidor
   createUser: (payload: UserCreate) => request<User>("/users", { method: "POST", body: JSON.stringify(payload) }),

@@ -14,7 +14,7 @@
     "composition": "100% algodão",
     "elasticity_pct": 5,
     "care": "Lavar à máquina em água fria. Não usar alvejante.",
-    "image": "camiseta-essential.svg",
+    "image": "camiseta-essential.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -81,7 +81,7 @@
     "composition": "70% algodão, 30% viscose",
     "elasticity_pct": 6,
     "care": "Lavar do avesso. Secar à sombra.",
-    "image": "camiseta-oversized.svg",
+    "image": "camiseta-oversized.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -148,7 +148,7 @@
     "composition": "100% algodão",
     "elasticity_pct": 2,
     "care": "Passar em temperatura média.",
-    "image": "camisa-oxford.svg",
+    "image": "camisa-oxford.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -215,7 +215,7 @@
     "composition": "64% poliéster, 33% viscose, 3% elastano",
     "elasticity_pct": 6,
     "care": "Lavar a seco ou à mão.",
-    "image": "calca-alfaiataria.svg",
+    "image": "calca-alfaiataria.jpg",
     "sizes": [
       {
         "size_label": "38",
@@ -294,7 +294,7 @@
     "composition": "92% algodão, 6% poliéster, 2% elastano",
     "elasticity_pct": 14,
     "care": "Lavar do avesso em água fria.",
-    "image": "calca-jeans.svg",
+    "image": "calca-jeans.jpg",
     "sizes": [
       {
         "size_label": "36",
@@ -373,7 +373,7 @@
     "composition": "92% viscose, 8% elastano",
     "elasticity_pct": 16,
     "care": "Lavar à mão. Não torcer.",
-    "image": "vestido-midi.svg",
+    "image": "vestido-midi.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -440,7 +440,7 @@
     "composition": "100% poliamida",
     "elasticity_pct": 1,
     "care": "Lavar à máquina em ciclo delicado.",
-    "image": "jaqueta-bomber.svg",
+    "image": "jaqueta-bomber.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -507,7 +507,7 @@
     "composition": "100% algodão",
     "elasticity_pct": 4,
     "care": "Lavar à máquina em água fria.",
-    "image": "polo-piquet.svg",
+    "image": "polo-piquet.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -574,7 +574,7 @@
     "composition": "80% algodão, 20% poliéster",
     "elasticity_pct": 6,
     "care": "Lavar do avesso. Não usar secadora.",
-    "image": "moletom-canguru.svg",
+    "image": "moletom-canguru.jpg",
     "sizes": [
       {
         "size_label": "S",
@@ -641,7 +641,7 @@
     "composition": "98% algodão, 2% elastano",
     "elasticity_pct": 5,
     "care": "Lavar à máquina em água fria.",
-    "image": "shorts-sarja.svg",
+    "image": "shorts-sarja.jpg",
     "sizes": [
       {
         "size_label": "38",

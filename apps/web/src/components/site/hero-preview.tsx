@@ -7,7 +7,7 @@ import { REGION_LABEL, REGION_STATUS_LABEL } from "@veste-ai/contracts";
 import { api } from "@/lib/api";
 import { formatScore } from "@/lib/utils";
 import { ScoreRing } from "@/components/fit/score-ring";
-import { StatusDot } from "@/components/fit/region-grid";
+import { STATUS_COLOR } from "@/components/fit/region-grid";
 import { ConfidenceBadge } from "@/components/fit/confidence-badge";
 
 const DEMO = { height: 180, weight: 78, chest: 102, waist: 88, hip: 100, shoulder: 45 };
@@ -52,14 +52,15 @@ export function HeroPreview() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-5 gap-2">
+        <div className="mt-5 grid grid-cols-5 gap-1">
           {(result?.regions ?? []).map((r) => (
-            <div key={r.region} className="rounded-xl bg-ivory px-2 py-2 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-stone">{REGION_LABEL[r.region]}</p>
-              <div className="mt-1 flex items-center justify-center gap-1 text-[11px] font-medium">
-                <StatusDot status={r.status} className="size-2" />
-                <span className="truncate">{REGION_STATUS_LABEL[r.status].split(" ")[0]}</span>
-              </div>
+            <div
+              key={r.region}
+              className="min-w-0 rounded-lg border-2 bg-ivory px-1 py-1.5 text-center"
+              style={{ borderColor: STATUS_COLOR[r.status] }}
+            >
+              <p className="text-[9px] uppercase tracking-wide text-stone leading-none">{REGION_LABEL[r.region]}</p>
+              <p className="mt-1 text-[9px] font-medium leading-[1.15]">{REGION_STATUS_LABEL[r.status]}</p>
             </div>
           ))}
         </div>

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..engine import BodyProfile, Category, GarmentSize, GarmentSpec, Modeling, VisualProportions
 from ..models import PhotoAnalysis, Product, SKUSize, UserMeasurement
+from .product_service import product_image_urls
 from ..schemas import (
     GarmentMeasurementIn,
     MeasurementsIn,
@@ -91,6 +92,7 @@ def size_to_schema(sku: SKUSize) -> SizeOut:
 
 
 def product_to_summary(product: Product) -> ProductSummary:
+    images = product_image_urls(product)
     return ProductSummary(
         id=product.id,
         slug=product.slug,
@@ -99,7 +101,9 @@ def product_to_summary(product: Product) -> ProductSummary:
         category=product.category,
         audience=product.audience,
         description=product.description,
-        image_url=product.image_url,
+        image_url=images[0] if images else product.image_url,
+        images=images,
+        video_url=product.video_url or "",
         color=product.color,
         price_cents=product.price_cents,
         modeling=product.modeling,

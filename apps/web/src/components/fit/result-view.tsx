@@ -5,7 +5,6 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Braces, ChevronRight, Info, MessageSquareHeart, Sparkles } from "lucide-react";
 import type { Product, RecommendationResponse } from "@veste-ai/contracts";
-import { FIT_PREFERENCE_LABEL, MODELING_LABEL } from "@veste-ai/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useProfile } from "@/lib/profile";
 import { cn, formatScore } from "@/lib/utils";
@@ -19,9 +18,6 @@ import { SizeComparisonBars } from "./size-comparison";
 import { ComponentBreakdown, WeightsBar } from "./how-we-calculate";
 import { ConfidenceBadge } from "./confidence-badge";
 import { JsonViewer } from "./json-viewer";
-import { FitPreview3DLazy } from "./fit-preview-3d-lazy";
-import { buildPreviewPayloadFromRecommendation, mergeFitPreviewPayload } from "@veste-ai/fit-preview-3d";
-
 export function ResultView({ analysisId }: { analysisId: string }) {
   const { user } = useProfile();
   const [base, setBase] = React.useState<RecommendationResponse | null>(null);
@@ -42,16 +38,6 @@ export function ResultView({ analysisId }: { analysisId: string }) {
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Não foi possível carregar a análise."));
   }, [analysisId]);
-
-  const previewPayload = React.useMemo(() => {
-    if (!current || !product) return null;
-    const fallback = buildPreviewPayloadFromRecommendation(current, product, {
-      body: user?.measurements ?? undefined,
-      photo: user?.photo_analysis,
-      garmentMeasurements: product.sizes.find((s) => s.size_label === current.evaluated_size)?.measurements,
-    });
-    return mergeFitPreviewPayload(current, fallback);
-  }, [current, product, user]);
 
   async function evaluate(size: string) {
     if (!base || !current) return;
@@ -145,9 +131,7 @@ export function ResultView({ analysisId }: { analysisId: string }) {
           <div className="grain absolute inset-0 -z-10" />
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{product?.brand}</Badge>
-            {product ? <Badge variant="secondary">{MODELING_LABEL[product.modeling]}</Badge> : null}
             <ConfidenceBadge confidence={current.confidence} />
-            {current.visual_used ? <Badge variant="slate">Análise visual experimental</Badge> : null}
           </div>
 
           <div className="mt-8 grid items-center gap-8 sm:grid-cols-[auto_1fr]">
@@ -222,20 +206,6 @@ export function ResultView({ analysisId }: { analysisId: string }) {
         </motion.div>
       </section>
 
-      {previewPayload ? (
-        <section className="space-y-4">
-          <div>
-            <p className="eyebrow">Provador visual 3D · tamanho {current.evaluated_size}</p>
-            <h2 className="mt-1 text-2xl font-medium">Avatar rotacionável com caimento regional</h2>
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FitPreview3DLazy payload={previewPayload} size="full" regionsFallback={current.regions} />
-            </motion.div>
-          </AnimatePresence>
-        </section>
-      ) : null}
-
       {/* REGIOES */}
       <section className="space-y-4">
         <div className="flex items-end justify-between">
@@ -258,19 +228,13 @@ export function ResultView({ analysisId }: { analysisId: string }) {
 
       {/* COMO CALCULAMOS */}
       <section className="rounded-[32px] border border-border bg-paper p-7 shadow-soft sm:p-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-xl">
-            <p className="eyebrow">Como calculamos?</p>
-            <h2 className="mt-1 text-2xl font-medium">Cinco componentes, um score explicável.</h2>
-            <p className="mt-2 text-sm text-stone">
-              Valores normalizados (0–10) de cada componente para o tamanho {current.evaluated_size}. Pesos oficiais do MVP;
-              sem foto, o peso das proporções é redistribuído.
-            </p>
-          </div>
-          <div className="text-sm text-stone">
-            Preferência declarada:{" "}
-            <span className="font-medium text-ink">{user ? FIT_PREFERENCE_LABEL[user.fit_preference] : "Regular"}</span>
-          </div>
+        <div className="max-w-xl">
+          <p className="eyebrow">Como calculamos?</p>
+          <h2 className="mt-1 text-2xl font-medium">Cinco componentes, um score explicável.</h2>
+          <p className="mt-2 text-sm text-stone">
+            Valores normalizados (0–10) de cada componente para o tamanho {current.evaluated_size}. Pesos oficiais do MVP;
+            sem foto, o peso das proporções é redistribuído.
+          </p>
         </div>
         <WeightsBar className="mt-6" weights={current.weights} />
         <div className="mt-6">

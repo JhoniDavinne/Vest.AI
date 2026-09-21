@@ -2,21 +2,32 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import type { Product, ProductSummary } from "@veste-ai/contracts";
 import { CATEGORY_LABEL, MODELING_LABEL } from "@veste-ai/contracts";
-import { api } from "@/lib/api";
+import { api, ApiError, DEMO_API_KEY } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { StudioHeader } from "@/components/studio/studio-shell";
 import { SizeTable } from "@/components/catalog/size-table";
+import { ProductImagesEditor } from "@/components/studio/product-images-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/misc";
 
 export default function StudioProducts() {
   const [products, setProducts] = React.useState<ProductSummary[] | null>(null);
   const [expanded, setExpanded] = React.useState<string | null>(null);
   const [details, setDetails] = React.useState<Record<string, Product>>({});
+  const [deleteTarget, setDeleteTarget] = React.useState<ProductSummary | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     api.listProducts().then(setProducts).catch(() => setProducts([]));
@@ -31,6 +42,34 @@ export default function StudioProducts() {
     if (!details[id]) {
       const product = await api.getProduct(id);
       setDetails((d) => ({ ...d, [id]: product }));
+    }
+  }
+
+  function openDeleteDialog(product: ProductSummary) {
+    setDeleteError(null);
+    setDeleteTarget(product);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deleteProduct(deleteTarget.id, DEMO_API_KEY);
+      setProducts((list) => list?.filter((item) => item.id !== deleteTarget.id) ?? null);
+      setDetails((d) => {
+        const next = { ...d };
+        delete next[deleteTarget.id];
+        return next;
+      });
+      if (expanded === deleteTarget.id) {
+        setExpanded(null);
+      }
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Não foi possível excluir o produto.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -82,24 +121,51 @@ export default function StudioProducts() {
                 <ChevronDown className={`size-4 text-stone transition ${expanded === p.id ? "rotate-180" : ""}`} />
               </button>
               {expanded === p.id ? (
-                <div className="border-t border-border bg-ivory/50 p-4">
+                <div className="space-y-4 border-t border-border bg-ivory/50 p-4">
                   {details[p.id] ? (
-                    <SizeTable sizes={details[p.id].sizes} />
+                    <>
+                      <ProductImagesEditor
+                        product={details[p.id]}
+                        onSaved={(images) => {
+                          setProducts((list) =>
+                            list?.map((item) =>
+                              item.id === p.id ? { ...item, image_url: images[0], images } : item,
+                            ) ?? null,
+                          );
+                          setDetails((d) => ({
+                            ...d,
+                            [p.id]: { ...d[p.id], image_url: images[0], images },
+                          }));
+                        }}
+                      />
+                      <SizeTable sizes={details[p.id].sizes} />
+                    </>
                   ) : (
                     <Skeleton className="h-32" />
                   )}
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                    <Link href={`/catalogo/${p.slug}`} className="text-ink underline underline-offset-2">
-                      Ver na loja VESTE.AI
-                    </Link>
-                    <span className="text-stone">·</span>
-                    <Link href={`/loja-parceira/produto/${p.slug}`} className="text-ink underline underline-offset-2">
-                      Ver na loja parceira (widget)
-                    </Link>
-                    <span className="text-stone">·</span>
-                    <Link href={`/empresa/api?sku=${p.available_sizes[Math.floor(p.available_sizes.length / 2)] ? `${details[p.id]?.sizes[Math.floor(p.available_sizes.length / 2)]?.sku ?? ""}` : ""}`} className="text-ink underline underline-offset-2">
-                      Testar via API
-                    </Link>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <Link href={`/catalogo/${p.slug}`} className="text-ink underline underline-offset-2">
+                        Ver na loja VESTE.AI
+                      </Link>
+                      <span className="text-stone">·</span>
+                      <Link href={`/loja-parceira/produto/${p.slug}`} className="text-ink underline underline-offset-2">
+                        Ver na loja parceira (widget)
+                      </Link>
+                      <span className="text-stone">·</span>
+                      <Link href={`/empresa/api?sku=${p.available_sizes[Math.floor(p.available_sizes.length / 2)] ? `${details[p.id]?.sizes[Math.floor(p.available_sizes.length / 2)]?.sku ?? ""}` : ""}`} className="text-ink underline underline-offset-2">
+                        Testar via API
+                      </Link>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => openDeleteDialog(p)}
+                    >
+                      <Trash2 />
+                      Excluir produto
+                    </Button>
                   </div>
                 </div>
               ) : null}
@@ -107,6 +173,28 @@ export default function StudioProducts() {
           ))}
         </div>
       )}
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && !deleting && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir produto?</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? `“${deleteTarget.name}” será removido do catálogo e não aparecerá mais na loja. Análises de provador já realizadas são preservadas.`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError ? <p className="text-sm text-clay">{deleteError}</p> : null}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" disabled={deleting} onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="destructive" disabled={deleting} onClick={confirmDelete}>
+              {deleting ? "Excluindo…" : "Excluir"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

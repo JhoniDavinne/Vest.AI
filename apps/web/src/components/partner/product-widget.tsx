@@ -12,8 +12,9 @@ export function PartnerProductWidget({ productId, sku }: { productId: string; sk
       apiKey={DEMO_API_KEY}
       accentColor="#c9a46a"
       initialMeasurements={{ height: 180, chest: 102, waist: 88, hip: 100, shoulder: 45 }}
-      label="Descubra seu tamanho ideal"
-      enable3D
+      label="Encontre seu tamanho"
+      showBranding={false}
+      brandName="Atelier Norte"
     />
   );
 }

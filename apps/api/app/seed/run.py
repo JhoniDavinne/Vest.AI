@@ -26,6 +26,7 @@ from ..models import (
     GarmentMeasurement,
     IntegrationKey,
     Product,
+    ProductImage,
     SKUSize,
     User,
     UserMeasurement,
@@ -72,11 +73,27 @@ def seed_demo_user(db: Session) -> User:
     return user
 
 
+def _catalog_image_urls(item: dict) -> list[str]:
+    files = item.get("images") or ([item["image"]] if item.get("image") else [])
+    return [f"/products/{name}" for name in files]
+
+
+def _apply_product_images(product: Product, urls: list[str]) -> None:
+    product.image_url = urls[0]
+    product.images.clear()
+    for index, url in enumerate(urls):
+        product.images.append(ProductImage(url=url, sort_order=index))
+
+
 def seed_catalog(db: Session, company: Company) -> list[Product]:
     products: list[Product] = []
     for item in build_catalog():
+        image_urls = _catalog_image_urls(item)
         existing = db.scalars(select(Product).where(Product.slug == item["slug"])).first()
         if existing:
+            _apply_product_images(existing, image_urls)
+            if item.get("video"):
+                existing.video_url = f"/products/{item['video']}"
             products.append(existing)
             continue
         product = Product(
@@ -87,7 +104,7 @@ def seed_catalog(db: Session, company: Company) -> list[Product]:
             category=item["category"],
             audience=item["audience"],
             description=item["description"],
-            image_url=f"/products/{item['image']}",
+            image_url=image_urls[0],
             color=item["color"],
             price_cents=item["price_cents"],
             modeling=item["modeling"],
@@ -96,6 +113,9 @@ def seed_catalog(db: Session, company: Company) -> list[Product]:
             elasticity_pct=item["elasticity_pct"],
             care=item["care"],
         )
+        _apply_product_images(product, image_urls)
+        if item.get("video"):
+            product.video_url = f"/products/{item['video']}"
         for index, size in enumerate(item["sizes"]):
             sku = SKUSize(
                 sku=f"{item['sku_prefix']}-{size['size_label']}",
@@ -108,6 +128,7 @@ def seed_catalog(db: Session, company: Company) -> list[Product]:
         db.add(product)
         db.commit()
         products.append(product)
+    db.commit()
     return products
 
 

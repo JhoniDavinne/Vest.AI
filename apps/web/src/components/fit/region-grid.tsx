@@ -28,18 +28,15 @@ export function RegionGrid({ regions, compact = false }: { regions: RegionDetail
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * index, duration: 0.4 }}
               className={cn(
-                "group relative cursor-help overflow-hidden rounded-2xl border border-border bg-paper transition hover:border-ink/30",
+                "group relative cursor-help overflow-hidden rounded-2xl border-2 bg-paper transition hover:opacity-90",
                 compact ? "p-3" : "p-4",
               )}
+              style={{ borderColor: STATUS_COLOR[region.status] }}
             >
-              <div className="absolute inset-x-0 top-0 h-1" style={{ background: STATUS_COLOR[region.status] }} />
-              <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-stone">{REGION_LABEL[region.region]}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <StatusDot status={region.status} />
-                <span className={cn("font-medium", compact ? "text-[13px]" : "text-sm")}>
-                  {REGION_STATUS_LABEL[region.status]}
-                </span>
-              </div>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-stone">{REGION_LABEL[region.region]}</p>
+              <p className={cn("mt-2 font-medium", compact ? "text-[13px]" : "text-sm")}>
+                {REGION_STATUS_LABEL[region.status]}
+              </p>
               {!compact && region.ease != null ? (
                 <p className="mt-2 text-xs text-stone">
                   Folga {region.ease > 0 ? "+" : ""}

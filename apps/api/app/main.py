@@ -15,6 +15,8 @@ from fastapi.responses import JSONResponse
 
 from .api.v1.router import api_router
 from .core.config import get_settings
+from sqlalchemy import inspect, text
+
 from .core.database import get_engine
 from .models import Base
 from .seed.run import database_is_empty, run_seed
@@ -36,12 +38,24 @@ compra mais informada.
 """
 
 
+def _apply_schema_compat(engine) -> None:
+    inspector = inspect(engine)
+    if "products" not in inspector.get_table_names():
+        return
+    columns = {column["name"] for column in inspector.get_columns("products")}
+    if "video_url" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE products ADD COLUMN video_url VARCHAR(400) DEFAULT '' NOT NULL"))
+        logger.info("Schema complementado (compat): products.video_url")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     settings = get_settings()
     engine = get_engine()
     if settings.auto_create_schema:
         Base.metadata.create_all(engine)
+        _apply_schema_compat(engine)
     if settings.auto_seed and database_is_empty():
         logger.info("Banco vazio: executando seed de demonstracao...")
         stats = run_seed()

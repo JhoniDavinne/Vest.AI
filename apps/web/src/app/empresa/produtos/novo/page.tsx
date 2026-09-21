@@ -7,6 +7,7 @@ import { CheckCircle2, Plus, Trash2, Wand2 } from "lucide-react";
 import type { Category, GarmentMeasurement, Modeling, ProductCreate } from "@veste-ai/contracts";
 import { CATEGORY_LABEL, MODELING_LABEL } from "@veste-ai/contracts";
 import { api, ApiError, DEMO_API_KEY } from "@/lib/api";
+import { ProductImagesField } from "@/components/studio/product-image-field";
 import { StudioHeader } from "@/components/studio/studio-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ export default function NewProductPage() {
   const router = useRouter();
   const [form, setForm] = React.useState({
     name: "", brand: "", category: "tshirt" as Category, modeling: "regular" as Modeling, audience: "unissex",
-    description: "", color: "", price: "", fabric: "", composition: "", elasticity_pct: "5", care: "",
+    description: "", color: "", price: "", fabric: "", composition: "", elasticity_pct: "5", care: "", images: [] as string[],
   });
   const [rows, setRows] = React.useState<SizeRow[]>([emptyRow("S"), emptyRow("M"), emptyRow("L")]);
   const [saving, setSaving] = React.useState(false);
@@ -40,7 +41,7 @@ export default function NewProductPage() {
     setForm({
       name: "Camiseta Linho Leve", brand: "Loja Parceira", category: "tshirt", modeling: "relaxed", audience: "unissex",
       description: "Camiseta em malha de linho com caimento relaxed e toque fresco.", color: "Areia", price: "159,90",
-      fabric: "Malha de linho", composition: "55% linho, 45% algodão", elasticity_pct: "3", care: "Lavar à mão.",
+      fabric: "Malha de linho", composition: "55% linho, 45% algodão", elasticity_pct: "3", care: "Lavar à mão.", images: [],
     });
     setRows([
       { ...emptyRow("S"), chest: "108", waist: "108", hip: "106", shoulder: "45", length: "70", sleeve: "22", width: "54" },
@@ -59,6 +60,8 @@ export default function NewProductPage() {
     const payload: ProductCreate = {
       name: form.name, brand: form.brand, category: form.category, modeling: form.modeling, audience: form.audience,
       description: form.description, color: form.color, fabric: form.fabric, composition: form.composition, care: form.care,
+      images: form.images.length > 0 ? form.images : undefined,
+      image_url: form.images[0],
       price_cents: Math.round((num(form.price) ?? 0) * 100),
       elasticity_pct: num(form.elasticity_pct) ?? 3,
       sizes: rows
@@ -137,6 +140,13 @@ export default function NewProductPage() {
             <Field label="Cuidados"><Input value={form.care} onChange={(e) => setForm({ ...form, care: e.target.value })} /></Field>
             <div className="md:col-span-2 lg:col-span-3">
               <Field label="Descrição"><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+            </div>
+            <div className="md:col-span-2 lg:col-span-3">
+              <ProductImagesField
+                value={form.images}
+                onChange={(images) => setForm({ ...form, images })}
+                apiKey={DEMO_API_KEY}
+              />
             </div>
           </div>
         </section>

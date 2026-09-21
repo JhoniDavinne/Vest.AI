@@ -5,13 +5,17 @@ WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/fit-preview-3d/package.json packages/fit-preview-3d/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/widget/package.json packages/widget/package.json
 
 RUN npm ci
 
 COPY apps/web apps/web
-COPY packages packages
+COPY packages/contracts packages/contracts
+COPY packages/fit-preview-3d packages/fit-preview-3d
+COPY packages/ui packages/ui
+COPY packages/widget packages/widget
 
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ARG NEXT_PUBLIC_DEMO_API_KEY=veste_demo_key_loja_parceira

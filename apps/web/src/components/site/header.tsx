@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 const NAV = [
   { href: "/catalogo", label: "Catálogo", icon: Shirt },
   { href: "/como-calculamos", label: "Como calculamos", icon: null },
-  { href: "/loja-parceira", label: "Loja parceira", icon: Store },
+  { href: "/loja-parceira", label: "Atelier Norte", icon: Store },
   { href: "/empresa", label: "Studio B2B", icon: Building2 },
 ];
 

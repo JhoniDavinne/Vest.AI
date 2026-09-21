@@ -102,6 +102,18 @@ class SizeOut(BaseModel):
     measurements: GarmentMeasurementIn
 
 
+class ProductImageOut(BaseModel):
+    image_url: str
+
+
+class ProductImageUpdate(BaseModel):
+    image_url: str = Field(min_length=1, max_length=400)
+
+
+class ProductImagesUpdate(BaseModel):
+    images: list[str] = Field(min_length=1, max_length=20)
+
+
 class ProductCreate(BaseModel):
     name: str = Field(min_length=2, max_length=160)
     brand: str = Field(min_length=1, max_length=80)
@@ -109,6 +121,7 @@ class ProductCreate(BaseModel):
     audience: str = "unissex"
     description: str = ""
     image_url: str = ""
+    images: list[str] = Field(default_factory=list)
     color: str = ""
     price_cents: int = 0
     modeling: ModelingLiteral
@@ -129,6 +142,8 @@ class ProductSummary(BaseModel):
     audience: str
     description: str
     image_url: str
+    images: list[str] = Field(default_factory=list)
+    video_url: str = ""
     color: str
     price_cents: int
     modeling: str

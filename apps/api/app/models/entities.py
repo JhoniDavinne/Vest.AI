@@ -112,6 +112,7 @@ class Product(IdMixin, TimestampMixin, Base):
     audience: Mapped[str] = mapped_column(String(24), default="unissex")
     description: Mapped[str] = mapped_column(Text, default="")
     image_url: Mapped[str] = mapped_column(String(400), default="")
+    video_url: Mapped[str] = mapped_column(String(400), default="")
     color: Mapped[str] = mapped_column(String(40), default="")
     price_cents: Mapped[int] = mapped_column(Integer, default=0)
     modeling: Mapped[str] = mapped_column(String(24), nullable=False)
@@ -125,6 +126,19 @@ class Product(IdMixin, TimestampMixin, Base):
     sizes: Mapped[list["SKUSize"]] = relationship(
         back_populates="product", cascade="all, delete-orphan", order_by="SKUSize.sort_order"
     )
+    images: Mapped[list["ProductImage"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order"
+    )
+
+
+class ProductImage(IdMixin, Base):
+    __tablename__ = "product_images"
+
+    product_id: Mapped[str] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
+    url: Mapped[str] = mapped_column(String(400), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+    product: Mapped[Product] = relationship(back_populates="images")
 
 
 class SKUSize(IdMixin, TimestampMixin, Base):

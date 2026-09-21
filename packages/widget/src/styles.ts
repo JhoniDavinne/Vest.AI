@@ -3,7 +3,8 @@
  * colisoes com o CSS da loja hospedeira. Sem dependencia de Tailwind.
  */
 export const WIDGET_CSS = `
-.vf-root{--vf-accent:#C4623A;--vf-ink:#141416;--vf-stone:#6F6B66;--vf-mist:#E9E5DF;--vf-ivory:#F7F4EF;--vf-sage:#5F7F6A;--vf-amber:#C99A3B;--vf-clay:#B4553F;--vf-slate:#8A96A3;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--vf-ink);font-size:14px;line-height:1.45}
+@import url("https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=Sora:wght@400;500;600&display=swap");
+.vf-root{--vf-accent:#C4623A;--vf-ink:#141416;--vf-stone:#6F6B66;--vf-mist:#E9E5DF;--vf-ivory:#F7F4EF;--vf-sage:#5F7F6A;--vf-amber:#C99A3B;--vf-clay:#B4553F;--vf-slate:#8A96A3;font-family:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--vf-ink);font-size:14px;line-height:1.45}
 .vf-root *{box-sizing:border-box}
 .vf-trigger{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--vf-mist);background:#fff;color:var(--vf-ink);border-radius:999px;padding:10px 16px 10px 12px;font-weight:500;cursor:pointer;transition:box-shadow .2s,transform .2s,border-color .2s;font-size:14px}
 .vf-trigger:hover{box-shadow:0 8px 24px -12px rgba(20,20,22,.3);transform:translateY(-1px);border-color:#d8d2ca}
@@ -12,11 +13,12 @@ export const WIDGET_CSS = `
 .vf-overlay{position:fixed;inset:0;background:rgba(20,20,22,.45);backdrop-filter:blur(4px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px;animation:vf-fade .2s ease}
 .vf-modal{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 24px 80px -24px rgba(20,20,22,.5);position:relative;animation:vf-rise .25s cubic-bezier(.2,.8,.2,1)}
 .vf-modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0}
-.vf-logo{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:.02em;font-size:18px}
-.vf-logo b{color:var(--vf-accent);font-weight:600}
+.vf-logo{font-family:"Literata",Georgia,serif;font-weight:500;letter-spacing:.005em;font-size:18px}
+.vf-logo b{color:var(--vf-accent);font-weight:500}
+.vf-store-brand{font-family:"Literata",Georgia,serif;font-weight:500;letter-spacing:.1em;font-size:13px;text-transform:uppercase;color:var(--vf-ink)}
 .vf-close{border:0;background:var(--vf-ivory);width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--vf-stone);font-size:16px}
 .vf-body{padding:16px 24px 24px}
-.vf-title{font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:500;margin:6px 0 4px;letter-spacing:-.01em}
+.vf-title{font-family:"Literata",Georgia,serif;font-size:24px;font-weight:500;margin:6px 0 4px;letter-spacing:-.015em}
 .vf-sub{color:var(--vf-stone);margin:0 0 18px}
 .vf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .vf-field label{display:block;font-size:12px;color:var(--vf-stone);margin-bottom:6px;letter-spacing:.02em}
@@ -31,18 +33,17 @@ export const WIDGET_CSS = `
 .vf-note{font-size:11.5px;color:var(--vf-stone);margin-top:12px;text-align:center}
 .vf-error{background:#fbeeea;color:#8a3a26;border-radius:12px;padding:10px 12px;margin-top:12px;font-size:13px}
 .vf-result{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;margin:8px 0 18px}
-.vf-size{width:104px;height:104px;border-radius:26px;background:var(--vf-ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Fraunces,Georgia,serif}
+.vf-size{width:104px;height:104px;border-radius:26px;background:var(--vf-ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Literata",Georgia,serif}
 .vf-size b{font-size:46px;font-weight:500;line-height:1}
-.vf-size span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:6px;font-family:Inter,system-ui,sans-serif}
-.vf-score{font-family:Fraunces,Georgia,serif;font-size:34px;font-weight:500;line-height:1}
+.vf-size span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:6px;font-family:"Sora",system-ui,sans-serif}
+.vf-score{font-family:"Literata",Georgia,serif;font-size:34px;font-weight:500;line-height:1}
 .vf-score small{font-size:16px;color:var(--vf-stone)}
 .vf-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:500;margin-top:8px;background:var(--vf-ivory);color:var(--vf-ink)}
 .vf-badge i{width:7px;height:7px;border-radius:50%;display:inline-block}
-.vf-regions{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin:14px 0}
-.vf-region{border:1px solid var(--vf-mist);border-radius:12px;padding:10px;text-align:center}
-.vf-region small{display:block;color:var(--vf-stone);font-size:11px;margin-bottom:6px}
-.vf-region i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.vf-region span{font-size:12px;font-weight:500}
+.vf-regions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0}
+.vf-region{border:2px solid var(--vf-mist);border-radius:12px;padding:10px 8px;text-align:center;min-width:0}
+.vf-region small{display:block;color:var(--vf-stone);font-size:10px;margin-bottom:6px;letter-spacing:.04em;line-height:1.2}
+.vf-region span{display:block;font-size:11px;font-weight:500;line-height:1.3}
 .vf-compare{display:flex;gap:6px;margin:6px 0 14px}
 .vf-compare button{flex:1;border:1px solid var(--vf-mist);background:#fff;border-radius:12px;padding:10px 6px;cursor:pointer;font-family:inherit;transition:all .15s}
 .vf-compare button b{display:block;font-size:15px}

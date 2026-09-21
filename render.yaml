@@ -1,0 +1,29 @@
+# Blueprint Render: API + PostgreSQL
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: veste-api
+    runtime: docker
+    dockerfilePath: docker/Dockerfile.api
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: VESTE_ENVIRONMENT
+        value: production
+      - key: VESTE_AUTO_CREATE_SCHEMA
+        value: "true"
+      - key: VESTE_AUTO_SEED
+        value: "true"
+      - key: VESTE_DATABASE_URL
+        fromDatabase:
+          name: veste-db
+          property: connectionString
+      - key: VESTE_CORS_ORIGINS
+        sync: false
+
+databases:
+  - name: veste-db
+    plan: free
+    databaseName: veste_ai
+    user: veste

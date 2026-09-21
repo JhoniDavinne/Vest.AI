@@ -22,8 +22,8 @@ export const brand = {
     slate: "#8A96A3",      // neutro / nao avaliado
   },
   fonts: {
-    display: '"Fraunces", "Playfair Display", Georgia, serif',
-    sans: '"Inter", "Geist", system-ui, -apple-system, "Segoe UI", sans-serif',
+    display: '"Literata", Georgia, serif',
+    sans: '"Sora", system-ui, -apple-system, "Segoe UI", sans-serif',
     mono: '"JetBrains Mono", "Geist Mono", ui-monospace, monospace',
   },
   radii: { sm: "8px", md: "14px", lg: "22px", xl: "32px", pill: "999px" },

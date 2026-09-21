@@ -27,7 +27,7 @@ export function SiteFooter() {
             ["/empresa", "Studio B2B"],
             ["/empresa/api", "Testar API"],
             ["/empresa/widget", "Widget"],
-            ["/loja-parceira", "Loja parceira (demo)"],
+            ["/loja-parceira", "Atelier Norte"],
           ]}
         />
         <FooterCol

@@ -1,16 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Literata, Sora } from "next/font/google";
 import { ProfileProvider } from "@/lib/profile";
 import { TooltipProvider } from "@/components/ui/misc";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
-  axes: ["opsz", "SOFT"],
-});
+const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
+const literata = Literata({ subsets: ["latin"], variable: "--font-literata", display: "swap" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
 
 export const metadata: Metadata = {
@@ -30,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${fraunces.variable} ${jetbrains.variable}`}>
+    <html lang="pt-BR" className={`${sora.variable} ${literata.variable} ${jetbrains.variable}`}>
       <body className="min-h-dvh font-sans">
         <ProfileProvider>
           <TooltipProvider delayDuration={150}>{children}</TooltipProvider>

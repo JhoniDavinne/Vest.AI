@@ -33,6 +33,10 @@ export interface VesteFitProps {
   accentColor?: string;
   /** Texto do botao. */
   label?: string;
+  /** Exibe marca VESTE.AI no botao e no modal. Desative em lojas parceiras. */
+  showBranding?: boolean;
+  /** Nome da loja no cabecalho do modal quando `showBranding` e false. */
+  brandName?: string;
   /** Chamado quando o consumidor seleciona um tamanho ("Adicionar ao carrinho"). */
   onSelectSize?: (size: string, result: RecommendationResponse) => void;
   onResult?: (result: RecommendationResponse) => void;
@@ -79,11 +83,26 @@ export function VesteFit({
   initialPreference = "regular",
   accentColor,
   label = "Descubra seu tamanho ideal",
+  showBranding = true,
+  brandName = "Atelier Norte",
   onSelectSize,
   onResult,
   defaultOpen = false,
-  enable3D = true,
+  enable3D = false,
 }: VesteFitProps) {
+  const modalTitle = showBranding ? "Descubra seu tamanho ideal" : label;
+  const modalSubtitle = showBranding
+    ? "Informe suas medidas. A VESTE.AI estima como esta peça tende a vestir — sem avaliar o seu corpo."
+    : "Informe suas medidas para receber uma sugestão de tamanho para esta peça.";
+  const loadingHint = showBranding
+    ? "O motor VESTE.AI compara cada tamanho com as medidas informadas."
+    : "Comparando suas medidas com a grade desta peça.";
+  const formNote = showBranding
+    ? "Estimativa de compatibilidade entre pessoa e peça · Motor VESTE.AI · Sem uso de foto neste canal"
+    : null;
+  const resultNote = showBranding
+    ? "Análise não avalia a aparência do corpo. Parâmetros heurísticos do MVP."
+    : "Sugestão baseada nas medidas informadas e na ficha técnica da peça.";
   const [open, setOpen] = React.useState(defaultOpen);
   const [step, setStep] = React.useState<Step>("form");
   const [values, setValues] = React.useState<Record<keyof Measurements, string>>(() => ({
@@ -157,16 +176,20 @@ export function VesteFit({
           </svg>
         </span>
         {label}
-        <span className="vf-trigger-brand">VESTE.AI</span>
+        {showBranding ? <span className="vf-trigger-brand">VESTE.AI</span> : null}
       </button>
 
       {open ? (
         <div className="vf-overlay" role="dialog" aria-modal="true" onClick={close}>
           <div className="vf-modal" onClick={(e) => e.stopPropagation()}>
             <div className="vf-modal-head">
-              <span className="vf-logo">
-                VESTE<b>.</b>AI
-              </span>
+              {showBranding ? (
+                <span className="vf-logo">
+                  VESTE<b>.</b>AI
+                </span>
+              ) : (
+                <span className="vf-store-brand">{brandName}</span>
+              )}
               <button type="button" className="vf-close" onClick={close} aria-label="Fechar">
                 ×
               </button>
@@ -180,10 +203,8 @@ export function VesteFit({
 
               {step === "form" ? (
                 <>
-                  <h3 className="vf-title">Descubra seu tamanho ideal</h3>
-                  <p className="vf-sub">
-                    Informe suas medidas. A VESTE.AI estima como esta peça tende a vestir — sem avaliar o seu corpo.
-                  </p>
+                  <h3 className="vf-title">{modalTitle}</h3>
+                  <p className="vf-sub">{modalSubtitle}</p>
                   <div className="vf-grid">
                     {FIELDS.map((field) => (
                       <div className="vf-field" key={field.key}>
@@ -219,9 +240,7 @@ export function VesteFit({
                   <button type="button" className="vf-cta" disabled={!canSubmit} onClick={() => submit()}>
                     Analisar caimento
                   </button>
-                  <p className="vf-note">
-                    Estimativa de compatibilidade entre pessoa e peça · Motor VESTE.AI · Sem uso de foto neste canal
-                  </p>
+                  {formNote ? <p className="vf-note">{formNote}</p> : null}
                 </>
               ) : null}
 
@@ -229,7 +248,7 @@ export function VesteFit({
                 <div className="vf-loading">
                   <div className="vf-spinner" />
                   <strong>Cruzando medidas, modelagem e tecido…</strong>
-                  <p style={{ margin: "6px 0 0" }}>O motor VESTE.AI compara cada tamanho com as medidas informadas.</p>
+                  <p style={{ margin: "6px 0 0" }}>{loadingHint}</p>
                 </div>
               ) : null}
 
@@ -245,6 +264,7 @@ export function VesteFit({
                     close();
                   }}
                   enable3D={enable3D}
+                  resultNote={resultNote}
                 />
               ) : null}
             </div>
@@ -263,9 +283,19 @@ interface ResultViewProps {
   onBack: () => void;
   onConfirm: () => void;
   enable3D?: boolean;
+  resultNote: string;
 }
 
-function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, onConfirm, enable3D = true }: ResultViewProps) {
+function ResultView({
+  result,
+  selectedSize,
+  onSelectSize,
+  onEvaluate,
+  onBack,
+  onConfirm,
+  enable3D = false,
+  resultNote,
+}: ResultViewProps) {
   const selected = result.comparison.find((c) => c.size === selectedSize) ?? result.comparison[0];
   const regionEntries = Object.entries(result.regional_analysis) as [RegionKey, RegionStatus][];
   return (
@@ -296,9 +326,8 @@ function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, on
 
       <div className="vf-regions">
         {regionEntries.map(([region, status]) => (
-          <div className="vf-region" key={region}>
+          <div className="vf-region" key={region} style={{ borderColor: STATUS_COLOR[status] }}>
             <small>{REGION_LABEL[region]}</small>
-            <i style={{ background: STATUS_COLOR[status] }} />
             <span>{REGION_STATUS_LABEL[status]}</span>
           </div>
         ))}
@@ -340,7 +369,7 @@ function ResultView({ result, selectedSize, onSelectSize, onEvaluate, onBack, on
           Usar tamanho {selectedSize}
         </button>
       </div>
-      <p className="vf-note">Análise não avalia a aparência do corpo. Parâmetros heurísticos do MVP.</p>
+      <p className="vf-note">{resultNote}</p>
     </>
   );
 }

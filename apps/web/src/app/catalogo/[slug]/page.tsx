@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { SiteShell } from "@/components/site/shell";
 import { AnalyzeCta } from "@/components/catalog/analyze-cta";
 import { CatalogFitPreviewSection } from "@/components/catalog/catalog-fit-preview-section";
+import { ProductImageCarousel } from "@/components/catalog/product-image-carousel";
 import { SizeTable } from "@/components/catalog/size-table";
 import { Badge } from "@/components/ui/badge";
 
@@ -50,10 +51,11 @@ export default async function ProductPage({ params }: { params: Params }) {
       </div>
       <div className="container-veste grid gap-12 py-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <div className="overflow-hidden rounded-[32px] border border-border bg-paper shadow-soft">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={product.image_url} alt={product.name} className="aspect-[4/5] w-full object-cover" />
-          </div>
+          <ProductImageCarousel
+            images={product.images?.length ? product.images : [product.image_url]}
+            videoUrl={product.video_url}
+            alt={product.name}
+          />
         </div>
 
         <div className="space-y-8">

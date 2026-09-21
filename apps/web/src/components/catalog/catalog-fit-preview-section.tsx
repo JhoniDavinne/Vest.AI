@@ -5,11 +5,13 @@ import type { Product } from "@veste-ai/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useProfile } from "@/lib/profile";
 import { Skeleton } from "@/components/ui/misc";
+import { FIT_PREVIEW_3D_ENABLED } from "@/lib/feature-flags";
 import { ProductFitPreview } from "./product-fit-preview";
 
 const DEMO_MEASUREMENTS = { height: 180, weight: 78, chest: 102, waist: 88, hip: 100, shoulder: 45 };
 
 export function CatalogFitPreviewSection({ product }: { product: Product }) {
+  if (!FIT_PREVIEW_3D_ENABLED) return null;
   const { user, loading: profileLoading } = useProfile();
   const [recommendation, setRecommendation] = React.useState<Awaited<ReturnType<typeof api.recommend>> | null>(null);
   const [error, setError] = React.useState<string | null>(null);

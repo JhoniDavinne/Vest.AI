@@ -61,7 +61,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "100% algodão",
             "elasticity_pct": 5,
             "care": "Lavar à máquina em água fria. Não usar alvejante.",
-            "image": "camiseta-essential.svg",
+            "images": ["camiseta-essential.jpg"],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 111, "waist": 111, "hip": 107, "shoulder": 45, "length": 71, "sleeve": 21, "width": 55.5},
@@ -86,7 +86,13 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "70% algodão, 30% viscose",
             "elasticity_pct": 6,
             "care": "Lavar do avesso. Secar à sombra.",
-            "image": "camiseta-oversized.svg",
+            "images": [
+                "camiseta-oversized-drop-1.jpg",
+                "camiseta-oversized-drop-2.jpg",
+                "camiseta-oversized-drop-3.jpg",
+                "camiseta-oversized-drop-4.jpg",
+                "camiseta-oversized-drop-5.jpg",
+            ],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 124, "waist": 124, "hip": 122, "shoulder": 52, "length": 76, "sleeve": 24, "width": 62},
@@ -111,7 +117,14 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "100% algodão",
             "elasticity_pct": 2,
             "care": "Passar em temperatura média.",
-            "image": "camisa-oxford.svg",
+            "images": [
+                "camisa-oxford-slim-1.jpg",
+                "camisa-oxford-slim-2.jpg",
+                "camisa-oxford-slim-3.jpg",
+                "camisa-oxford-slim-4.jpg",
+                "camisa-oxford-slim-5.jpg",
+                "camisa-oxford-slim-6.jpg",
+            ],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 108, "waist": 100, "hip": 106, "shoulder": 45.5, "length": 75, "sleeve": 64, "width": 54},
@@ -136,7 +149,15 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "64% poliéster, 33% viscose, 3% elastano",
             "elasticity_pct": 6,
             "care": "Lavar a seco ou à mão.",
-            "image": "calca-alfaiataria.svg",
+            "images": [
+                "calca-alfaiataria-regular-1.jpg",
+                "calca-alfaiataria-regular-2.jpg",
+                "calca-alfaiataria-regular-3.jpg",
+                "calca-alfaiataria-regular-4.jpg",
+                "calca-alfaiataria-regular-5.jpg",
+                "calca-alfaiataria-regular-6.jpg",
+            ],
+            "video": "calca-alfaiataria-regular.mp4",
             "sizes": _grade(
                 SIZE_LABELS_NUMERIC, 2,
                 {"chest": None, "waist": 91, "hip": 106, "shoulder": None, "length": 108, "sleeve": None, "width": 40},
@@ -161,7 +182,12 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "92% algodão, 6% poliéster, 2% elastano",
             "elasticity_pct": 14,
             "care": "Lavar do avesso em água fria.",
-            "image": "calca-jeans.svg",
+            "images": [
+                "calca-jeans-skinny-stretch-1.jpg",
+                "calca-jeans-skinny-stretch-2.jpg",
+                "calca-jeans-skinny-stretch-3.jpg",
+                "calca-jeans-skinny-stretch-4.jpg",
+            ],
             "sizes": _grade(
                 ["36", "38", "40", "42", "44"], 2,
                 {"chest": None, "waist": 78, "hip": 100, "shoulder": None, "length": 104, "sleeve": None, "width": 28},
@@ -186,7 +212,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "92% viscose, 8% elastano",
             "elasticity_pct": 16,
             "care": "Lavar à mão. Não torcer.",
-            "image": "vestido-midi.svg",
+            "images": [f"vestido-midi-malha-{i}.jpg" for i in range(1, 11)],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 96, "waist": 80, "hip": 102, "shoulder": 38, "length": 118, "sleeve": 12, "width": 48},
@@ -211,7 +237,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "100% poliamida",
             "elasticity_pct": 1,
             "care": "Lavar à máquina em ciclo delicado.",
-            "image": "jaqueta-bomber.svg",
+            "images": [f"jaqueta-bomber-relaxed-{i}.jpg" for i in range(1, 6)],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 122, "waist": 116, "hip": 112, "shoulder": 49, "length": 68, "sleeve": 63, "width": 61},
@@ -236,7 +262,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "100% algodão",
             "elasticity_pct": 4,
             "care": "Lavar à máquina em água fria.",
-            "image": "polo-piquet.svg",
+            "images": [f"polo-piquet-regular-{i}.jpg" for i in range(1, 6)],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 110, "waist": 106, "hip": 108, "shoulder": 45.5, "length": 72, "sleeve": 22, "width": 55},
@@ -261,7 +287,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "80% algodão, 20% poliéster",
             "elasticity_pct": 6,
             "care": "Lavar do avesso. Não usar secadora.",
-            "image": "moletom-canguru.svg",
+            "images": [f"moletom-canguru-oversized-{i}.jpg" for i in range(1, 6)],
             "sizes": _grade(
                 SIZE_LABELS_LETTERS, 1,
                 {"chest": 128, "waist": 122, "hip": 118, "shoulder": 54, "length": 72, "sleeve": 60, "width": 64},
@@ -286,7 +312,7 @@ def build_catalog() -> list[dict[str, Any]]:
             "composition": "98% algodão, 2% elastano",
             "elasticity_pct": 5,
             "care": "Lavar à máquina em água fria.",
-            "image": "shorts-sarja.svg",
+            "images": [f"shorts-sarja-relaxed-{i}.jpg" for i in range(1, 6)],
             "sizes": _grade(
                 SIZE_LABELS_NUMERIC, 2,
                 {"chest": None, "waist": 92, "hip": 110, "shoulder": None, "length": 50, "sleeve": None, "width": 58},

@@ -95,6 +95,8 @@ export interface ProductSummary {
   audience: string;
   description: string;
   image_url: string;
+  images: string[];
+  video_url?: string;
   color: string;
   price_cents: number;
   modeling: Modeling;
@@ -126,6 +128,7 @@ export interface ProductCreate {
   audience?: string;
   description?: string;
   image_url?: string;
+  images?: string[];
   color?: string;
   price_cents?: number;
   modeling: Modeling;

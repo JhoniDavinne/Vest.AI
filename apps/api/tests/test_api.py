@@ -29,6 +29,46 @@ def test_openapi_available(client):
         assert expected in paths
 
 
+def test_catalog_products_use_real_photos(client):
+    products = client.get(f"{API}/products").json()
+    camiseta = next(p for p in products if p["slug"] == "camiseta-essential-algodao")
+    assert camiseta["image_url"].endswith(".jpg")
+
+
+def test_product_detail_includes_images_gallery(client):
+    detail = client.get(f"{API}/products/camiseta-essential-algodao").json()
+    assert detail["image_url"]
+    assert isinstance(detail["images"], list)
+    assert detail["images"][0] == detail["image_url"]
+
+
+def test_update_product_images(client):
+    product = client.get(f"{API}/products/camiseta-essential-algodao").json()
+    urls = [product["image_url"], "/products/camiseta-oversized.jpg"]
+    updated = client.patch(
+        f"{API}/products/{product['id']}/images",
+        json={"images": urls},
+        headers={"X-API-Key": DEMO_KEY},
+    )
+    assert updated.status_code == 200
+    body = updated.json()
+    assert body["images"] == urls
+    assert body["image_url"] == urls[0]
+
+
+def test_upload_product_image(client):
+    img = Image.new("RGB", (400, 500), (240, 240, 240))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    r = client.post(
+        f"{API}/products/upload-image",
+        files={"file": ("peca.jpg", buf.getvalue(), "image/jpeg")},
+        headers={"X-API-Key": DEMO_KEY},
+    )
+    assert r.status_code == 201
+    assert r.json()["image_url"].startswith("/products/uploads/")
+
+
 def test_list_products_and_sizes(client):
     r = client.get(f"{API}/products")
     assert r.status_code == 200
@@ -49,6 +89,43 @@ def test_list_products_and_sizes(client):
 
 def test_product_not_found(client):
     assert client.get(f"{API}/products/nao-existe").status_code == 404
+
+
+def test_delete_product(client):
+    created = client.post(
+        f"{API}/products",
+        json={
+            "name": "Produto Temporario",
+            "brand": "Teste",
+            "category": "tshirt",
+            "audience": "unissex",
+            "description": "Item para exclusao",
+            "color": "Branco",
+            "price_cents": 9990,
+            "modeling": "regular",
+            "fabric": "Algodao",
+            "composition": "100% algodao",
+            "elasticity_pct": 3,
+            "care": "Lavar a seco",
+            "sizes": [
+                {
+                    "size_label": "M",
+                    "stock": 5,
+                    "measurements": {"chest": 100, "waist": 96, "hip": 98, "length": 70},
+                }
+            ],
+        },
+        headers={"X-API-Key": DEMO_KEY},
+    )
+    assert created.status_code == 201
+    product = created.json()
+
+    deleted = client.delete(f"{API}/products/{product['id']}", headers={"X-API-Key": DEMO_KEY})
+    assert deleted.status_code == 204
+
+    assert client.get(f"{API}/products/{product['slug']}").status_code == 404
+    slugs = {p["slug"] for p in client.get(f"{API}/products").json()}
+    assert product["slug"] not in slugs
 
 
 def test_recommendation_demo_payload(client):
