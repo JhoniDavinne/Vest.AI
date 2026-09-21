@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .api.v1.router import api_router
 from .core.config import get_settings
@@ -21,6 +22,7 @@ from .core.database import get_engine
 from .models import Base
 from .seed.run import database_is_empty, run_seed
 from .services.errors import NotFoundError, UnauthorizedError, ValidationError
+from .services.product_image_service import product_uploads_dir
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("veste.api")
@@ -96,6 +98,9 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=401, content={"detail": str(exc)})
 
     app.include_router(api_router, prefix=settings.api_prefix)
+
+    uploads_dir = product_uploads_dir()
+    app.mount("/products/uploads", StaticFiles(directory=uploads_dir), name="product-uploads")
 
     @app.get("/", include_in_schema=False)
     def root() -> dict:

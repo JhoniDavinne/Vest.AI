@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   images: { unoptimized: true },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL ??
+      (process.env.VERCEL ? "https://veste-api.onrender.com" : "http://localhost:8000"),
   },
 };
 

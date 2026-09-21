@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Chave de integracao B2B da empresa demo (seed)
     demo_api_key: str = "veste_demo_key_loja_parceira"
 
+    # Upload de imagens de produto (Studio). Em producao, arquivos ficam no disco da API.
+    product_upload_dir: str = ""
+
     # Visao computacional experimental
     vision_enabled: bool = True
     max_photo_bytes: int = 8 * 1024 * 1024

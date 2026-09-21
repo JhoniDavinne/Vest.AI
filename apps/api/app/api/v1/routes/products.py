@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, Query, UploadFile, status
+from fastapi import APIRouter, File, Query, Request, UploadFile, status
 
 from ....api.deps import DbSession, OptionalCompany
 from ....schemas import (
@@ -51,10 +51,17 @@ def create_product(payload: ProductCreate, db: DbSession, company: OptionalCompa
     summary="Enviar imagem de produto (Studio / B2B)",
 )
 async def upload_product_image(
+    request: Request,
     file: Annotated[UploadFile, File(description="Foto da peca (JPG, PNG ou WebP, max 5 MB)")],
 ) -> ProductImageOut:
     data = await file.read()
-    image_url = product_image_service.save_product_image(data, file.filename, file.content_type)
+    base_url = str(request.base_url).rstrip("/")
+    image_url = product_image_service.save_product_image(
+        data,
+        file.filename,
+        file.content_type,
+        base_url=base_url,
+    )
     return ProductImageOut(image_url=image_url)
 
 

@@ -27,11 +27,28 @@ import { API_V1_PREFIX } from "@veste-ai/contracts";
 
 export const DEMO_API_KEY = process.env.NEXT_PUBLIC_DEMO_API_KEY ?? "veste_demo_key_loja_parceira";
 
+const LOCAL_API_URL = "http://localhost:8000";
+const PRODUCTION_API_URL = "https://veste-api.onrender.com";
+
+function resolveConfiguredApiUrl(): string | undefined {
+  const raw =
+    typeof window === "undefined"
+      ? process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL
+      : process.env.NEXT_PUBLIC_API_URL;
+  const normalized = raw?.trim().replace(/\/$/, "");
+  return normalized || undefined;
+}
+
+/** URL base da API (servidor usa API_URL; navegador usa NEXT_PUBLIC_API_URL). */
 export function apiBaseUrl(): string {
-  if (typeof window === "undefined") {
-    return (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+  const configured = resolveConfiguredApiUrl();
+  if (configured && configured !== LOCAL_API_URL) {
+    return configured;
   }
-  return (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return PRODUCTION_API_URL;
+  }
+  return configured ?? LOCAL_API_URL;
 }
 
 export class ApiError extends Error {
@@ -50,11 +67,25 @@ async function request<T>(path: string, init: RequestInit = {}, options: { apiKe
   }
   if (options.apiKey) headers.set("X-API-Key", options.apiKey);
 
-  const response = await fetch(`${apiBaseUrl()}${API_V1_PREFIX}${path}`, {
-    ...init,
-    headers,
-    cache: "no-store",
-  });
+  const url = `${apiBaseUrl()}${API_V1_PREFIX}${path}`;
+  const fetchOptions: RequestInit = { ...init, headers, cache: "no-store" };
+  const maxAttempts = typeof window === "undefined" && process.env.VERCEL ? 3 : 1;
+  let response: Response | undefined;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      response = await fetch(url, fetchOptions);
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+      }
+    }
+  }
+  if (!response) {
+    throw lastError instanceof Error ? lastError : new Error("Falha ao conectar na API.");
+  }
   if (!response.ok) {
     let detail = `Erro ${response.status}`;
     try {

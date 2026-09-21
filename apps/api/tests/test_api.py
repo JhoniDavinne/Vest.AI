@@ -66,7 +66,7 @@ def test_upload_product_image(client):
         headers={"X-API-Key": DEMO_KEY},
     )
     assert r.status_code == 201
-    assert r.json()["image_url"].startswith("/products/uploads/")
+    assert "/products/uploads/" in r.json()["image_url"]
 
 
 def test_list_products_and_sizes(client):
